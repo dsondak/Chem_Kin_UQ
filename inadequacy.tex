@@ -1,0 +1,7 @@
+\section{Stochastic Inadequacy Model}
+Equations~\eqref{eq:reduced} and~\eqref{eq:reduced_T} are not always sufficient to represent chemical reactions with the fidelity needed in combustion applications.  With this in mind, we augment the species in the reduced model by $\na$ ``subgrid'' species which are intended to mimic the effect of the species that were neglected in going from the detailed to the reduced model.  The species concentrations are now given by $\x = \left[x_{1}, \ldots, \x_{\nsr}, \x_{\nsr+1}, \ldots, \x_{\nsr + \na}\right]^{\dagger}$ where $\na$ is the number of atoms in the system.  The enthalpies are augmented similarly.  We therefore introduce an enhanced reduced model of the form,
+\begin{align}
+  \odeone{\x}{t} &= \rr + g\lr{T}\left[\Sop \x + \rrc\right] \\
+  \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}{\displaystyle \cp\lr{T}\cdot\x}.
+\end{align}
+The subgrid portion of the model is contained in a linear part $\Sop$ and a nonlinear part $\rrc$ which are both temperature independent.  Temperature dependence is built in through the prefator $g\lr{T}$.  The operators $\Sop$ and $\rrc$ as well as the prefactor are all stochastic in nature and have several parameters that must be calibrated.
