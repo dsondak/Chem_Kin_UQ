@@ -1,0 +1,13 @@
+\section{Inadequacy Model Constraints}
+In this section, we attempt to constrain the stochastic operator in various ways to try to guarantee that the operator reproduces the behavior from the detailed model.
+
+\subsection{Enthalpies}
+The enthalpy from the subgrid species should equal the enthalpy from the species in the detailed model that were negelected in reducing the model.  That is
+\begin{align}
+  \htc = \sum_{i=\nsr + 1}^{\nsr + \na}{\hic{i}\xir{i}} = \sum_{k=\nsr+1}^{\nsd}{\hid{k}\xid{k}} \label{eq:eq_enthalpies}
+\end{align}
+Using~\eqref{eq:transition} in~\eqref{eq:eq_enthalpies} gives,
+\begin{align}
+  &\sum_{i=\nsr+1}^{\nsr + \na}{\hic{i}\left[\sum_{j=\nsr+1}^{\nsd}{\beta_{ij}\xid{j}}\right]} = \sum_{k=\nsr+1}^{\nsd}{\hid{k}\xid{k}} \\
+  \Rightarrow & \sum
+\end{align}
