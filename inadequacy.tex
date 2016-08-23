@@ -5,3 +5,9 @@ Equations~\eqref{eq:reduced} and~\eqref{eq:reduced_T} are not always sufficient 
   \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}{\displaystyle \cp\lr{T}\cdot\x}.
 \end{align}
 The subgrid portion of the model is contained in a linear part $\Sop$ and a nonlinear part $\rrc$ which are both temperature independent.  Temperature dependence is built in through the prefator $g\lr{T}$.  The operators $\Sop$ and $\rrc$ as well as the prefactor are all stochastic in nature and have several parameters that must be calibrated.
+
+We can introduce a transition matrix, $\B = \left[\beta_{ij}\right]$, that redistributes neglected species from the detailed model to the reduced model.  That is
+\begin{align}
+  x_{i}^{R} = \sum_{j=\nsr + 1}^{\nsd}{\beta_{ij}x_{j}^{D}}. \label{eq:transition}
+\end{align}
+We will use this matrix in subsequent sections.
