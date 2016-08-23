@@ -6,8 +6,16 @@ The enthalpy from the subgrid species should equal the enthalpy from the species
 \begin{align}
   \htc = \sum_{i=\nsr + 1}^{\nsr + \na}{\hic{i}\xir{i}} = \sum_{k=\nsr+1}^{\nsd}{\hid{k}\xid{k}} \label{eq:eq_enthalpies}
 \end{align}
+where $\htc$ is the enthalpy from the subgrid species.
 Using~\eqref{eq:transition} in~\eqref{eq:eq_enthalpies} gives,
 \begin{align}
   &\sum_{i=\nsr+1}^{\nsr + \na}{\hic{i}\left[\sum_{j=\nsr+1}^{\nsd}{\beta_{ij}\xid{j}}\right]} = \sum_{k=\nsr+1}^{\nsd}{\hid{k}\xid{k}} \\
-  \Rightarrow & \sum
+  \Rightarrow & \sum_{i=\nsr + 1}^{\nsr + \na}\sum_{j=\nsr+1}^{\nsd}{\hic{i}\beta_{ij}\xid{j}} = \sum_{k=\nsr+1}^{\nsd}{\hid{k}\xid{k}} \\
+  \Rightarrow & \sum_{k=\nsr + 1}^{\nsr + \na}\sum_{i=\nsr+1}^{\nsd}{\hic{k}\beta_{ki}\xid{i}} = \sum_{i=\nsr+1}^{\nsd}{\hid{i}\xid{i}} \\
+  \Rightarrow & \sum_{k=\nsr + 1}^{\nsr + \na}\sum_{i=\nsr+1}^{\nsd}{\hic{k}\beta_{ki}\xid{i}} - \sum_{i=\nsr+1}^{\nsd}{\hid{i}\xid{i}} = 0 \\
+  \Rightarrow & \sum_{i=\nsr + 1}^{\nsd}\left[\sum_{k=\nsr+1}^{\nsr + \na}\hic{k}\beta_{ki} - \hid{i}\right]\xid{i} = 0.
+\end{align}
+Thus,
+\begin{align}
+  \sum_{k=\nsr+1}^{\nsr+\na}\hic{k}\beta_{ki} = \hid{i}, \qquad \forall \ i.
 \end{align}
