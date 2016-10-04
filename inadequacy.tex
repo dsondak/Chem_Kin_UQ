@@ -1,13 +1,93 @@
-\section{Stochastic Inadequacy Model}
-Equations~\eqref{eq:reduced} and~\eqref{eq:reduced_T} are not always sufficient to represent chemical reactions with the fidelity needed in combustion applications.  With this in mind, we augment the species in the reduced model by $\na$ ``subgrid'' species which are intended to mimic the effect of the species that were neglected in going from the detailed to the reduced model.  The species concentrations are now given by $\x = \left[x_{1}, \ldots, \x_{\nsr}, \x_{\nsr+1}, \ldots, \x_{\nsr + \na}\right]^{\dagger}$ where $\na$ is the number of atoms in the system.  The enthalpies are augmented similarly.  We therefore introduce an enhanced reduced model of the form,
+\section{Inadequacy Formulations}
+Equations~\eqref{eq:reduced} and~\eqref{eq:reduced_T} are not always sufficient to represent 
+chemical reactions with the fidelity needed in combustion applications.  We introduce an 
+additional term to the reduced model to capture the effects of the neglected reactions and 
+species.  The general form is 
+\begin{align}
+  \odeone{\xs}{t} &= \rrr\lr{\xr, T} + \rrs\lr{\xr, T; \pars}
+\end{align}
+and we wish to develop a reasonable form for $\rrs\lr{\xr, T; \pars}$.  Note that $\pars$ 
+represents stochastic parameters that enter into the model.
+
+\subsection{Initial Formulation}
+This initial formulation is due to Rebecca's thesis work.  We augment the species in the 
+reduced model by $\na$ ``catchall'' species which are intended to mimic the effect of the 
+species that were neglected in going from the detailed to the reduced model.  Catchall 
+species and their quantities are denoted with a supersript $\prime$.  The species 
+concentrations are now given by 
+$\x = \left[x_{1}, \ldots, \x_{\nsr}, \x_{\nsr+1}, \ldots, \x_{\nsr + \na}\right]^{\dagger}$ 
+where $\na$ is the number of atoms in the system.  The enthalpies are augmented similarly.  
+We therefore introduce an enhanced reduced model of the form,
+\begin{align}
+  \odeone{\x}{t} &= \rr + \left[\Sop \x + \rrc\right] \label{eq:inad_reb} \\
+  \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}
+                         {\displaystyle \cp\lr{T}\cdot\x}. \label{eq:energy_reb}
+\end{align}
+The operators $\Sop$ and $\rrc$ are stochastic in nature and have several parameters that 
+must be calibrated.  We must also specify a form for the enthalpies of the ``catchall'' 
+species.  This was done by assuming a simple linear temperature dependence of the specific 
+heat on the temperature.  In general,  
+\begin{align}
+  \hic{k} = \sum_{i=0}^{p}{\alpha_{ki}T^{i}}
+\end{align}
+and 
+\begin{align}
+  \cpic{k} = \sum_{i=1}^{p}{i\alpha_{ki}T^{i-1}}
+\end{align}
+where $p-1$ is the polynomial order being used to represent the specific heat.  Note that 
+using~\eqref{eq:s_cp_rel} we have the additional relationship 
+\begin{align}
+  \sic{k} = \gamma_{k0} + \alpha_{k1}\ln\lr{T} + \sum_{i=2}^{p}{\frac{i}{i-1}\alpha_{ki}T^{i-1}}.
+\end{align}
+When $p=2$ we have simply 
+\begin{align}
+  \hic{k}  &= \alpha_{k0} + \alpha_{k1}T + \alpha_{k2}T^{2} \\ 
+  \cpic{k} &= \alpha_{k1} + 2\alpha_{k2}T \\
+  \sic{k}  &= \gamma_{k0}  + \alpha_{k1}\ln\lr{T} + 2\alpha_{k2}T.
+\end{align}
+
+
+
+\subsubsection{Global Temperature Dependence}
+The inadequacy portion of the model is contained in a linear part $\Sop$ and a nonlinear part 
+$\rrc$ which are both temperature independent.  Temperature dependence is built in through 
+a prefator $g\lr{T}$.  
 \begin{align}
   \odeone{\x}{t} &= \rr + g\lr{T}\left[\Sop \x + \rrc\right] \\
   \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}{\displaystyle \cp\lr{T}\cdot\x}.
 \end{align}
-The subgrid portion of the model is contained in a linear part $\Sop$ and a nonlinear part $\rrc$ which are both temperature independent.  Temperature dependence is built in through the prefator $g\lr{T}$.  The operators $\Sop$ and $\rrc$ as well as the prefactor are all stochastic in nature and have several parameters that must be calibrated.
-
-We can introduce a transition matrix, $\B = \left[\beta_{ij}\right]$, that redistributes neglected species from the detailed model to the reduced model.  That is
+Two forms for the prefactor are the Arrhenius form and the hyperbolic tangent switch. 
+The Arrhenius form is
 \begin{align}
-  x_{i}^{R} = \sum_{j=\nsr + 1}^{\nsd}{\beta_{ij}x_{j}^{D}}. \label{eq:transition}
+  g_{A}\lr{T} = \exp\lr{-T_{ag} / T}
 \end{align}
-We will use this matrix in subsequent sections.
+where $T_{ag}$ is the global activation temperature.  The global hyperbolic switch has 
+the form
+\begin{align}
+  g_{S}\lr{T} = \tanh\lr{T-T_{ig}} = \tanh\lr{T - T_{adg}}
+\end{align}
+where $T_{ig}$ and $T_{adg}$ are the global ignition temperature and the global 
+adiabatic flame temperature.
+
+\subsection{Dissociation-Recombination Reactions}
+The linear part of the original inadequacy formulation~\ref{eq:inad_reb} is very 
+high-dimensional.  We would like to reduce the dimensionality of the inadequacy 
+formulation.  This will provide some additional flexibility when introducing a 
+temperature dependence (e.g. we may be able to get with something more fine-grained 
+than a global temperature dependence).
+
+As a first step, we can introduce a set of reversible dissociation-recombination 
+(D-R) reactions.  These reactions will allow species to dissociate into elemental 
+catchall species.  For example, the \ce{H2}-\ce{O2} system consists of the set 
+of species $\left\{\ce{H}, \ce{O}, \ce{H2}, \ce{O2}, \ce{OH}, \ce{H2O}, \ce{HO2}\right\}$. 
+The set of catchall species is $\left\{\ce{H}^{\prime}, \ce{O}^{\prime}\right\}$. 
+An example of a D-R reaction would be 
+\begin{align}
+  \ce{H2O <=> 2H^{\prime} + O^{\prime}}.
+\end{align} 
+We would then form the ODE system as usual and include this new reaction.  We 
+would of course also need to provide a form for the enthalpy and a form for 
+entropy for the catchall species since we are now dealing with a reversible 
+reaction.  
+
+
