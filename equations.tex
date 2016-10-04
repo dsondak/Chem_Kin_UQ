@@ -1,15 +1,38 @@
 \section{Governing Equations}
-A detailed chemical mechanism consists of a set of $\nrd$ reactions involving $\nsd$ species.  Let $\xd = \left[x_{1}^{D}, \ldots, x_{\nsd}^{D}\right]^{\dagger} \in \mathbb{R}^{\nsd}$ denote a vector of species in the detailed model.  Then a set of coupled ODEs governing the evolution of each species and temperature is
+A detailed chemical mechanism consists of a set of $\nrd$ reactions involving $\nsd$ species.  
+Let $\xd = \left[x_{1}^{D}, \ldots, x_{\nsd}^{D}\right]^{\dagger} \in \mathbb{R}^{\nsd}$ denote 
+a vector of species in the detailed model.  Then a set of coupled ODEs governing the evolution 
+of each species and temperature is
 \begin{align}
   \odeone{\xd}{t} &= \rrd \\
   \odeone{T}{t}   &= \frac{\displaystyle -\hd\lr{T}\cdot\odeone{\xd}{t} + \dot{\mathcal{Q}}}{\displaystyle \cpd\lr{T}\cdot\xd}
 \end{align}
-where $\dot{\mathcal{Q}}$ is a heating rate and $\cpd\lr{T}$ is the specific heat at constant pressure.  Note that
+where $\dot{\mathcal{Q}}$ is a heating rate and $\cpd\lr{T}$ is the specific heat at constant 
+pressure.  Note that
 \begin{align}
-  \cpd\lr{T} = \left.\pdeone{\hd}{T}\right|_{p}.
+  \cpd\lr{T} = \left.\pdeone{\hd}{T}\right|_{p}
 \end{align}
-In actual combustion simulations, we wish to reduce the size of the chemical kinetics system.  To this end, let $\xr = \left[x_{1}^{R}, \ldots, x_{\nsr}^{R}\right]^{\dagger} \in \mathbb{R}^{\nsr}$ denote a vector of species in the reduced model.  Note that $\nsr < \nsd$.  Then, the reduced system of equations becomes,
+where $\hd$ is the enthalpy of the detailed model.  In general, we denote the enthalpy by $h$ 
+and the specific heat at constant pressure by $c_{p}$.
+Two other useful relations are
+\begin{align}
+  h\lr{T} &= \int{c_{p}\lr{T} \ \mathrm{d}T} \label{eq:h_cp_rel} \\
+  s\lr{T} &= \int{\frac{c_{p}}{T} \ \mathrm{d}T} \label{eq:s_cp_rel}
+\end{align}
+where $s\lr{T}$ is the entropy.
+
+In actual combustion simulations, we wish to reduce the size of the chemical kinetics system.  
+To this end, let $\xr = \left[x_{1}^{R}, \ldots, x_{\nsr}^{R}\right]^{\dagger} \in \mathbb{R}^{\nsr}$ 
+denote a vector of species in the reduced model.  Note that $\nsr < \nsd$.  Then, the reduced 
+system of equations becomes,
 \begin{align}
   \odeone{\xr}{t} &= \rrr \label{eq:reduced}\\
   \odeone{T}{t}   &= \frac{\displaystyle -\hr\lr{T}\cdot\odeone{\xr}{t} + \dot{\mathcal{Q}}}{\displaystyle \cpr\lr{T}\cdot\xr}. \label{eq:reduced_T}
 \end{align}
+
+Note that we can introduce a transition matrix, $\B = \left[\beta_{ij}\right]$, that 
+redistributes neglected species from the detailed model to the reduced model.  That is
+\begin{align}
+  x_{i}^{R} = \sum_{j=\nsr + 1}^{\nsd}{\beta_{ij}x_{j}^{D}}. \label{eq:transition}
+\end{align}
+We will use this matrix in subsequent sections.
