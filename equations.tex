@@ -1,4 +1,6 @@
 \section{Governing Equations}
+
+\subsection{Evolution of Species and Temperature}
 A detailed chemical mechanism consists of a set of $\nrd$ reactions involving $\nsd$ species.  
 Let $\xd = \left[x_{1}^{D}, \ldots, x_{\nsd}^{D}\right]^{\dagger} \in \mathbb{R}^{\nsd}$ denote 
 a vector of species in the detailed model.  Then a set of coupled ODEs governing the evolution 
@@ -21,6 +23,44 @@ Two other useful relations are
 \end{align}
 where $s\lr{T}$ is the entropy.
 
+\subsection{Reaction Rates}
+The reaction rate for species $k$ is given by 
+\begin{align}
+  \rrk{k} = \sum_{j=1}^{M}{\nu_{kj}r_{j}}
+\end{align}
+ where $\nu_{kj} = \nup{kj} - \nur{kj}$ is the difference between
+ the stoichiometric coefficients for species $k$ 
+in reaction $j$ and $r_{j}$ is the progress rate of reaction $j$.  
+Note that $\nup{kj}$ and $\nur{kj}$ are the stoichiometric 
+coefficients for the products and reactants respectively. The 
+progress rate of reaction $j$ is described in the following 
+subsections.
+\subsubsection{Elementary Reactions}
+For elementary reactions, the progress rate is given by 
+\begin{align}
+  r_{j} = \frate{j}\prod_{k=1}^{N}{\xk{k}^{\nur{kj}}} - 
+          \rrate{j}\prod_{k=1}^{N}{\xk{k}^{\nup{kj}}}
+\end{align}
+where $\frate{j}$ and $\rrate{j}$ are the forward and reverse reaction rates 
+respectively.  These are given by 
+\begin{align}
+  \frate{j} = A_{j}T^{\beta_{j}}\exp\lr{-E_{j}/RT}
+\end{align}
+and 
+\begin{align}
+  \rrate{j} = \frac{\frate{j}}{\Keq{j}}
+\end{align}
+where $\Keq{j}$ is the equilibrium constant.  It is computed from 
+\begin{align}
+  \Keq{j} = \lr{\frac{p_{a}}{RT}}^{\sum_{k=1}^{N}{\nu_{kj}}}\exp\lr{\frac{\Delta S_{j}}{R} - \frac{\Delta H}{RT}}
+\end{align}
+where $\Delta S_{j}$ and $\Delta H_{j}$ are the change in entropy and entropy 
+between the products and reactants for reaction $j$.  These are usually given 
+by the NASA polynomials.
+
+\subsubsection{Unimolecular Reactions (Three-Body Reactions)}
+
+\subsection{Comments on Reduced Kinetics}
 In actual combustion simulations, we wish to reduce the size of the chemical kinetics system.  
 To this end, let $\xr = \left[x_{1}^{R}, \ldots, x_{\nsr}^{R}\right]^{\dagger} \in \mathbb{R}^{\nsr}$ 
 denote a vector of species in the reduced model.  Note that $\nsr < \nsd$.  Then, the reduced 
