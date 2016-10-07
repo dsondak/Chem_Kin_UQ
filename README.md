@@ -1,2 +1,4 @@
 # Chem_Kin_UQ
-Model doc for chemical kinetics inadequacy project.
+Chemical kinetics inadequacy project.
+model_doc contains the documentation.
+new_models contains the code.
