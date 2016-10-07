@@ -1,0 +1,37 @@
+#  -*-getpot-*-
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Input file for forward problem
+# 
+# The input parser supports a notion of sections which are defined by
+# the [section] syntax. You are allowed to have variables of the same
+# name so long as they are within unique section definitions.
+# 
+# $Id: input.txt 25123 2011-10-28 19:50:52Z karl $
+# ------------------------------------------------------------------------------
+
+#------------------------------------------
+# Global input variable definitions
+#------------------------------------------
+
+n_species     = 7                  # Number of species
+n_atoms       = 2                  # Number of atoms
+include_inad  = 1                  # Include inadequacy model
+n_extra       = 2                  # For inert? species (N2 and H2O2 for now)
+n_phis        = 1                  # Number of phi ICs
+phis          = '1.0'              # Fuel ratios to use
+n_heating     = 1                  # Number of heating rates
+n_T           = 1                  # Number of initial temperatures
+n_reactions   = 5                 # Number of reactions in model
+Temperatures  = 0                  # Initial temperatures on (1) or off (0)
+heat_rates    = 1                  # Heating rates on (1) or off (0)
+heating_rate  = '5.0e+06'          # Heating rate values
+TO            = '450'              # Initial temperature values
+time_points   = 1.0e-06            # Sample every time_points
+num_times     = 50000              # Take this many samples
+fuel          = 2.0                # Initial fuel concentration (H2 here)
+oxidizer_i    = 1.0                # Initial oxidizer concentration (O2 here)
+nitrogen      = 3.78               # Initial N2 concentration
+thermo        = 'nasa7_thermo.xml' # Input file for thermodynamics
+reactionset   = 'five_rxn.xml'     # Input file for reactions
+dataset       = 'fiverxn.h5' # Datafile to write solution to
