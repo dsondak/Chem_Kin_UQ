@@ -39,7 +39,7 @@ subsections.
 For elementary reactions, the progress rate is given by 
 \begin{align}
   r_{j} = \frate{j}\prod_{k=1}^{N}{\xk{k}^{\nur{kj}}} - 
-          \rrate{j}\prod_{k=1}^{N}{\xk{k}^{\nup{kj}}}
+          \rrate{j}\prod_{k=1}^{N}{\xk{k}^{\nup{kj}}} \label{eq:rj_elem}
 \end{align}
 where $\frate{j}$ and $\rrate{j}$ are the forward and reverse reaction rates 
 respectively.  These are given by 
@@ -59,6 +59,62 @@ between the products and reactants for reaction $j$.  These are usually given
 by the NASA polynomials.
 
 \subsubsection{Unimolecular Reactions (Three-Body Reactions)}
+Unimolecular reactions involve the dissociation of a single 
+homogeneous species (e.g. \ce{O2}) into its component elements 
+with the aid of the other species in the mixture (the third body). 
+An example of such a reaction is 
+\begin{align}
+  \ce{O + O + M <=> O2 + M}.
+\end{align}
+The reaction progress rate~\eqref{eq:rj_elem} is modified to be 
+\begin{align}
+  r_{j}^{u} = \xk{M}r_{j}
+\end{align} 
+where the concentration of the third body $\xk{M}$ is given by 
+\begin{align}
+  \xk{M} = \sum_{k=1}^{N}{\epsilon_{kj}\xk{k}}
+\end{align}
+and $\epsilon_{kj}$ is the efficiency of species $k$ in the 
+unimolecular reaction $j$.  The forward and reverse reaction 
+rate coefficients are the same as for the elementary reactions.
+
+\subsubsection{Unimolecular Reactions (Three-Body Falloff Reactions)}
+Sometimes it is possible for the reaction rate coefficients to be 
+have a pressure dependency.  These are called falloff reactions 
+because of the way that the reaction rate ``falls off'' from a 
+constant at low pressures.  The forward reaction rate coefficient 
+is given by 
+\begin{align}
+  \frate{} = \lr{\frac{1}{k_{0}\xk{M}} + \frac{1}{k_{\infty}}}^{-1}F
+\end{align}
+where $k_{0}$ and $k_{\infty}$ are the forward reaction rate 
+coefficients at low and high pressures, respectively.  Note that 
+the pressure dependence is actually implicity represented in $\xk{M}$ 
+since $\xk{M}$ and the pressure are related linearly.  $F$ is 
+a fudge factor.  For Lindemann falloffs $F = 1$. 
+However, there are many other detailed treatments of $F$.  One 
+such representation is called the Troe falloff.  Brace yourself, 
+this one is a bit of a mess.  The fudge factor is 
+given by
+\begin{align}
+  \log_{10}\lr{F} = \frac{\displaystyle \log_{10}\lr{F_{c}\lr{T}}}
+    {\displaystyle 1 + \lr{\frac{\displaystyle\log_{10}\lr{\frac{k_{0}\xk{M}}{k_{\infty}}} + c}{\displaystyle N - d\lr{\log_{10}\lr{\frac{k_{0}\xk{M}}{k_{\infty}}} + c}}}^{2}}
+\end{align}
+where 
+\begin{align}
+  c &= -0.4 - 0.67\log_{10}\lr{F_{c}\lr{T}} \\
+  N &= 0.75 - 1.27\log_{10}\lr{F_{c}\lr{T}} \\
+  d &= 0.14
+\end{align}
+are emperical parameters that depend on the central broadening factor which 
+is in turn given by 
+\begin{align}
+  F_{c}\lr{T} = \lr{1-a}\exp\lr{-\frac{T}{T_{3}}} + 
+                      a \exp\lr{-\frac{T}{T_{1}}} + 
+                        \exp\lr{-\frac{T_{2}}{T}}.
+\end{align}
+The parameters $a$, $T_{1}$, $T_{2}$, and $T_{3}$ are specified by the 
+user.
 
 \subsection{Comments on Reduced Kinetics}
 In actual combustion simulations, we wish to reduce the size of the chemical kinetics system.  
@@ -76,3 +132,18 @@ redistributes neglected species from the detailed model to the reduced model.  T
   x_{i}^{R} = \sum_{j=\nsr + 1}^{\nsd}{\beta_{ij}x_{j}^{D}}. \label{eq:transition}
 \end{align}
 We will use this matrix in subsequent sections.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
