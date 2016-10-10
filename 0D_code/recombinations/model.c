@@ -75,6 +75,16 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // Get the number of species in the model
   unsigned int n_species = rxn.ProblemInfo.n_species + rxn.ProblemInfo.n_extra;
   unsigned int n_atoms   = rxn.ProblemInfo.n_atoms;
+  int dim;
+
+  if (rxn.ProblemInfo.include_inad)
+  {
+     dim = n_species + n_atoms + 1;
+  }
+  else
+  {
+     dim = n_species + 1;
+  }
 
   // Solution vector (units are moles)
   std::vector<double> molar_densities(n_species,0);
@@ -88,7 +98,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   }
 
   // Prepare Antioch to get chemistry and thermodynamic information
-  double temperature = Y[n_species + n_atoms];
+  double temperature = Y[dim-1];
   Antioch::TempCache<double> temp_cache(temperature);
 
   // Get some thermodynamic data for each species
@@ -113,13 +123,18 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       dYdt[i] = mole_sources[i];
   }
 
+  // Needed for energy equation
+  double Qnum = 0.0;
+  double Qden = 0.0;
+
   if (rxn.ProblemInfo.include_inad)
   {
      double R = Antioch::Constants::R_universal<double>();
      double RT = R * temperature;
-     double pa = 1.0e+05; // 1 bar
+     double pa = 1.0e+05; // 1 bar in Pa
      double pa_RT = pa / RT;
      std::vector<double> h_prime(n_atoms, 0.0);  // Enthalpy for catchalls 
+     std::vector<double> cp_prime(n_atoms, 0.0); // Specific heat (constant cp) for catchalls 
      std::vector<double> s_prime(n_atoms, 0.0);  // Entropy for catchalls 
      // Coeffs for catchall thermo
      std::vector<double> alpha_0(n_atoms, 0.0);
@@ -136,12 +151,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      alpha_2[1] = 1.0e-01;
      for (int m = 0; m < n_atoms; m++)
      {
-         h_prime[m] = alpha_0[m] + 
-                      alpha_1[m] * temperature + 
-                      alpha_2[m] * temperature * temperature;
-         s_prime[m] = beta_0[m]  + 
-                      alpha_1[m] * log(temperature) + 
-                      2.0 * alpha_2[m] * temperature;
+         h_prime[m]  = alpha_0[m] + 
+                       alpha_1[m] * temperature + 
+                       alpha_2[m] * temperature * temperature;
+         cp_prime[m] = alpha_1[m] + 2.0 * alpha_2[m] * temperature;
+         s_prime[m]  = beta_0[m]  + 
+                       alpha_1[m] * log(temperature) + 
+                       2.0 * alpha_2[m] * temperature;
      }
      MatrixXd nukj_r = rxn.ProblemInfo.nukj_r;
      MatrixXd nukj_p = rxn.ProblemInfo.nukj_p;
@@ -189,15 +205,25 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          kbj = kfj / kej;
          rfj = 1.0;
          rbj = 1.0;
+         // Create a new vector containing only relevant species
+         // This will not be necessary if the user supplies only 
+         // the participating species
+         std::vector<double> Yinad(rxn.ProblemInfo.n_species + n_atoms, 0.0);
+         // First just copy participating species to Yinad
+         for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+         {
+             Yinad[k] = Y[k];
+         }
+         // Next copy catchall species to Yinad
+         for (int k = 0; k < n_atoms; k++)
+         {
+             Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
+         }
+         // Calculate reaction rates
          for (int k = 0; k < Nc; k++)
-         {   // FIXME! Change Y to some other vector.
-             //        Right now, Y has species that 
-             //        are not present in the catchall 
-             //        reactions.  This can be remedied 
-             //        by copying the participating 
-             //        species to a new vector.
-             rfj *= pow(Y[k], nukj_r(k,j));
-             rbj *= pow(Y[k], nukj_p(k,j));
+         {
+             rfj *= pow(Yinad[k], nukj_r(k,j));
+             rbj *= pow(Yinad[k], nukj_p(k,j));
          }
          rj(j) = kfj * rfj - kbj * rbj;
      }
@@ -206,16 +232,26 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      omega_dot_inad = nukj * rj;
      // The very last step is to add omega_dot_inad to the 
      // dYdt and then move on to the energy equation.
-     exit(0);
+     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+     {
+         dYdt[k] += omega_dot_inad(k);
+     }
+     for (int k = 0; k < n_atoms; k++)
+     {
+         dYdt[(dim - 1) - n_atoms + k] += omega_dot_inad(rxn.ProblemInfo.n_species + k);
+     }
+     // Get catchall contribution to energy equation
+     for (unsigned int k = 0; k < n_atoms; k++)
+     {
+         Qnum += h_prime[k] * dYdt[(dim - 1) - n_atoms + k];
+         Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
+     }
   }
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species
   std::vector<double> cv(n_species, 0.); // Specific volume for each species
   std::vector<double> cp(n_species, 0.); // Specific pressure for each species
-
-  double Qnum = 0.0;
-  double Qden = 0.0;
 
   for (unsigned int s = 0; s < n_species; s++)
   { // Get numerator and denominator in energy equation (sum of species)
@@ -234,7 +270,6 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
 
   // Right hand side of energy equation.
   dYdt[n_species] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
-  //dYdt[n_species] = -Qnum / Qden + rxn.ProblemInfo.heating_rate;
   
   return GSL_SUCCESS;
 }
