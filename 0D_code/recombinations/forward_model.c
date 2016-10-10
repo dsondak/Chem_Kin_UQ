@@ -185,7 +185,7 @@ int main()
   species_str_list.push_back("OH");
   species_str_list.push_back("HO2");
   species_str_list.push_back("H2O");
-  species_str_list.push_back("H2O2");
+  //species_str_list.push_back("H2O2");
   species_str_list.push_back("N2");
 
   // Get chemistry for species involved in this reaction
@@ -212,7 +212,7 @@ int main()
           // Set initial values of each species and temperature
           initialValues[0] = fuel*phiPoints[l]; // H2
           initialValues[1] = oxidizer_i;        // O2
-          initialValues[8] = nitrogen;          // N2
+          initialValues[n_species] = nitrogen;  // N2
           if (do_initial_temps)
           {
              initialValues[dim-1] = tempPoints[ll]; // initial temperature
