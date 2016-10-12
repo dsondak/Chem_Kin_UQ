@@ -28,13 +28,11 @@ TEST(ReadInputTest, Doubles) {
 
 }
 
-/*
 // Tests reading in double from input file.
 TEST(ReadInputTest, Strings) {
-  ASSERT_STREQ("hello", ReadString());
+  EXPECT_EQ("hello", ReadString());
 
 }
-*/
 
 // Step 3. Call RUN_ALL_TESTS() in main().
 //

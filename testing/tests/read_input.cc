@@ -10,7 +10,6 @@ using namespace GRVY;
 
 GRVY_Input_Class iparse;
 
-// 
 int ReadInt() 
 {
 
@@ -46,6 +45,7 @@ double ReadDouble()
 std::string ReadString()
 {
     std::string string_in;
+
     if (! iparse.Open("../tests/input.txt") )
     {
        string_in = "Failed";
