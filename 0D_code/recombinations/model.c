@@ -75,15 +75,11 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // Get the number of species in the model
   unsigned int n_species = rxn.ProblemInfo.n_species + rxn.ProblemInfo.n_extra;
   unsigned int n_atoms   = rxn.ProblemInfo.n_atoms;
-  int dim;
+  int dim = n_species + 1;
 
   if (rxn.ProblemInfo.include_inad)
   {
-     dim = n_species + n_atoms + 1;
-  }
-  else
-  {
-     dim = n_species + 1;
+     dim += n_atoms;
   }
 
   // Solution vector (units are moles)
@@ -117,6 +113,15 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       h_RT_minus_s_R,  // exponent in equilibrium constant for reverse rates
       mole_sources);   // RHS
 
+  /*
+  std::cout << molar_densities << std::endl;
+  std::cout << "\n" << std::endl;
+  std::cout << h_RT_minus_s_R << std::endl;
+  std::cout << "\n" << std::endl;
+  std::cout << mole_sources << std::endl;
+  std::cout << "\n" << std::endl;
+  */
+
   // Set up RHS of each ODE for the species
   for (unsigned int i = 0; i < n_species; i++)
   { // Loop over species
@@ -126,6 +131,8 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // Needed for energy equation
   double Qnum = 0.0;
   double Qden = 0.0;
+
+  double R_universal = Antioch::Constants::R_universal<double>();
 
   if (rxn.ProblemInfo.include_inad)
   {
@@ -143,8 +150,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      {
          Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
      }
-     double R = Antioch::Constants::R_universal<double>();
-     double RT = R * temperature;
+     double RT = R_universal * temperature;
      double pa = 1.0e+05; // 1 bar in Pa
      double pa_RT = pa / RT;
      std::vector<double> h_prime(n_atoms, 0.0);  // Enthalpy for catchalls 
@@ -155,10 +161,10 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      std::vector<double> beta_0 (n_atoms, 0.0);
      std::vector<double> alpha_1(n_atoms, 0.0);
      std::vector<double> alpha_2(n_atoms, 0.0);
-     alpha_0[0] = 10.0;
-     alpha_0[1] = 20.0;
-     beta_0[0]  = 25.0;
-     beta_0[1]  = 50.0;
+     alpha_0[0] = 10.0; //10.0;
+     alpha_0[1] = 15.0; //20.0;
+     beta_0[0]  = 200.0; //100.0; //25.0;
+     beta_0[1]  = 250.0; //250.0; //50.0;
      alpha_1[0] = 1.0e-03;
      alpha_1[1] = 2.0e-03;
      alpha_2[0] = 5.0e-02;
@@ -176,12 +182,9 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      MatrixXd nukj_r = rxn.ProblemInfo.nukj_r;
      MatrixXd nukj_p = rxn.ProblemInfo.nukj_p;
      MatrixXd nukj   = rxn.ProblemInfo.nukj;
-     MatrixXi s_to_r_map = rxn.ProblemInfo.species_to_reaction_map;
      VectorXd gamma = rxn.ProblemInfo.gamma;
      int Mc = 7; // FIXME  Remove hard coding
      int Nc = rxn.ProblemInfo.n_species + n_atoms;
-     double h_over_RT_k;
-     double s_over_R_k;
      double exp_arg_j;
      // Make up some Arrhenius coeffs. for now
      VectorXd A(Mc);
@@ -189,30 +192,35 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      VectorXd Ea(Mc);
      A    << 1.0e+10, 2.0e+05, 1.1e+07, 3.2e+02, 1.0e+09, 1.5e+03, 2.7e+06;
      beta << 0.0, 1.0, 1.5, 1.1, 0.5, 0.25, 1.9;
-     Ea   << 7.5e+04, 1.0e+03, 1.1e+04, 1.5e+04, 2.0e+04, 1.7e+04, 9.0e+03;
+     Ea   << 2.5e+05, 2.5e+05, 2.1e+05, 2.5e+05, 2.0e+05, 2.7e+05, 2.0e+05;
      
-     double kfj;
-     double kej;
-     double kbj;
-     double rfj;
-     double rbj;
-     VectorXd rj(Mc);
-     std::cout << nukj_r << std::endl << std::endl;
+     double kfj; // forward reaction rate coeff.
+     double kej; // equilibrium constant
+     double kbj; // backward reaction rate coeff.
+     double rfj; // forward progress rate
+     double rbj; // backware progress rate
+
+     VectorXd rj(Mc); // progress rate
+
+     // Set up s/R - h_RT for each species
+     std::vector<double> delta_k(rxn.ProblemInfo.n_species + n_atoms, 0.0);
+     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+     {
+         delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
+                      rxn.Thermo->h_over_RT(temp_cache, k);
+     }
+     for (int k = 0; k < n_atoms; k++)
+     {
+         delta_k[rxn.ProblemInfo.n_species + k] = s_prime[k] / R_universal - h_prime[k] / RT;
+     }
+
      for (int j = 0; j < Mc; j++)
      {
          kfj = A(j) * pow(temperature, beta(j)) * exp(-Ea(j) / RT);
          exp_arg_j = 0.0;
-         for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+         for (int k = 0; k < rxn.ProblemInfo.n_species + n_atoms; k++)
          {
-             h_over_RT_k = rxn.Thermo->h_over_RT(temp_cache, k);
-             s_over_R_k  = rxn.Thermo->s_over_R(temp_cache, k);
-             exp_arg_j  += nukj(k,j) * (s_over_R_k - h_over_RT_k);
-         }
-         for (int k = 0; k < n_atoms; k++)
-         {
-             h_over_RT_k = h_prime[k] / RT;
-             s_over_R_k  = s_prime[k] / R;
-             exp_arg_j  += nukj(rxn.ProblemInfo.n_species + k, j) * (s_over_R_k - h_over_RT_k);
+             exp_arg_j  += nukj(k,j) * delta_k[k];
          }
          kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
          kbj = kfj / kej;
@@ -221,16 +229,11 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          // Calculate reaction rates
          for (int k = 0; k < Nc; k++)
          {
-             if (j == 2)
-             {
-                std::cout << Yinad[k] << "   " << nukj_r(k,j) << "   " << pow(Yinad[k], nukj_r(k,j)) << std::endl;
-             }
              rfj *= pow(Yinad[k], nukj_r(k,j));
              rbj *= pow(Yinad[k], nukj_p(k,j));
          }
          rj(j) = kfj * rfj - kbj * rbj;
      }
-     exit(0);
      // Finally, compute the RHS for these species.
      VectorXd omega_dot_inad;
      omega_dot_inad = nukj * rj;
@@ -251,41 +254,26 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
      }
   }
-  //for (int k = 0; k < dim; k++)
-  //{
-  //    std::cout << dYdt[k] << std::endl;
-  //}
-  //std::cout << "\n" << std::endl;
-  //std::cout << Qnum << "/" << Qden << std::endl;
-  //exit(0);
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species
-  std::vector<double> cv(n_species, 0.); // Specific volume for each species
   std::vector<double> cp(n_species, 0.); // Specific pressure for each species
 
   for (unsigned int s = 0; s < n_species; s++)
   { // Get numerator and denominator in energy equation (sum of species)
       // Get enthalpy and convert to molar from mass basis
       // Note that R_universal/Rs = Ws where Ws is the molecular weight of species s
-      //h[s] = rxn.Thermo->h(Cache(Y[n_species]),s)/rxn.Chem_mixture->R(s)* Antioch::Constants::R_universal<double>();
-      h[s] = rxn.Thermo->h(temp_cache,s)/rxn.Chem_mixture->R(s)* Antioch::Constants::R_universal<double>();
-      // get cv and convert from mass to molar
-      //cp[s] = rxn.Thermo->cp(Cache(Y[n_species]),s)/rxn.Chem_mixture->R(s)* Antioch::Constants::R_universal<double>();
-      cp[s] = rxn.Thermo->cp(temp_cache,s)/rxn.Chem_mixture->R(s)* Antioch::Constants::R_universal<double>();
-      // Numerator in energy equation: u_s * dx_s/dt
+      h[s] = rxn.Thermo->h(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
+      // get cp and convert from mass to molar
+      cp[s] = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
+      // Numerator in energy equation: h_s * dx_s/dt
       Qnum += h[s] * mole_sources[s];
-      // Denominator in energy equation
+      // Denominator in energy equation: cp_s * x_s
       Qden += cp[s] * molar_densities[s];
   }
 
   // Right hand side of energy equation.
   dYdt[dim-1] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
-  //for (int k = 0; k < dim; k++)
-  //{
-  //    std::cout << dYdt[k] << std::endl;
-  //}
-  //exit(0);
   
   return GSL_SUCCESS;
 }
