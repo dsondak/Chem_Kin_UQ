@@ -129,6 +129,20 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
 
   if (rxn.ProblemInfo.include_inad)
   {
+     // Create a new vector containing only relevant species
+     // This will not be necessary if the user supplies only 
+     // the participating species
+     std::vector<double> Yinad(rxn.ProblemInfo.n_species + n_atoms, 0.0);
+     // First just copy participating species to Yinad
+     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+     {
+         Yinad[k] = Y[k];
+     }
+     // Next copy catchall species to Yinad
+     for (int k = 0; k < n_atoms; k++)
+     {
+         Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
+     }
      double R = Antioch::Constants::R_universal<double>();
      double RT = R * temperature;
      double pa = 1.0e+05; // 1 bar in Pa
@@ -164,11 +178,11 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      MatrixXd nukj   = rxn.ProblemInfo.nukj;
      MatrixXi s_to_r_map = rxn.ProblemInfo.species_to_reaction_map;
      VectorXd gamma = rxn.ProblemInfo.gamma;
-     int Mc = 7; // FIXME!  Remove hard coding
+     int Mc = 7; // FIXME  Remove hard coding
      int Nc = rxn.ProblemInfo.n_species + n_atoms;
-     double h_over_RT_j;
-     double s_over_R_j;
-     double exp_arg;
+     double h_over_RT_k;
+     double s_over_R_k;
+     double exp_arg_j;
      // Make up some Arrhenius coeffs. for now
      VectorXd A(Mc);
      VectorXd beta(Mc);
@@ -183,50 +197,40 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      double rfj;
      double rbj;
      VectorXd rj(Mc);
+     std::cout << nukj_r << std::endl << std::endl;
      for (int j = 0; j < Mc; j++)
      {
          kfj = A(j) * pow(temperature, beta(j)) * exp(-Ea(j) / RT);
-         s_over_R_j  = rxn.Thermo->s_over_R(temp_cache, j);
-         h_over_RT_j = rxn.Thermo->h_over_RT(temp_cache, j);
-         double hj_prime = 0.0;
-         double sj_prime = 0.0;
-         for (int i = 0; i < 3; i++)
+         exp_arg_j = 0.0;
+         for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
          {
-             int pt;
-             if (s_to_r_map(j,i) < Nc)
-             {
-                pt = s_to_r_map(j,i) % (Nc - n_atoms);
-                hj_prime += h_prime[pt];
-                sj_prime += s_prime[pt];
-             }
+             h_over_RT_k = rxn.Thermo->h_over_RT(temp_cache, k);
+             s_over_R_k  = rxn.Thermo->s_over_R(temp_cache, k);
+             exp_arg_j  += nukj(k,j) * (s_over_R_k - h_over_RT_k);
          }
-         exp_arg = (sj_prime / R - s_over_R_j) - (hj_prime / RT - h_over_RT_j);
-         kej = pow(pa_RT, gamma(j)) * exp(exp_arg);
+         for (int k = 0; k < n_atoms; k++)
+         {
+             h_over_RT_k = h_prime[k] / RT;
+             s_over_R_k  = s_prime[k] / R;
+             exp_arg_j  += nukj(rxn.ProblemInfo.n_species + k, j) * (s_over_R_k - h_over_RT_k);
+         }
+         kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
          kbj = kfj / kej;
          rfj = 1.0;
          rbj = 1.0;
-         // Create a new vector containing only relevant species
-         // This will not be necessary if the user supplies only 
-         // the participating species
-         std::vector<double> Yinad(rxn.ProblemInfo.n_species + n_atoms, 0.0);
-         // First just copy participating species to Yinad
-         for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
-         {
-             Yinad[k] = Y[k];
-         }
-         // Next copy catchall species to Yinad
-         for (int k = 0; k < n_atoms; k++)
-         {
-             Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
-         }
          // Calculate reaction rates
          for (int k = 0; k < Nc; k++)
          {
+             if (j == 2)
+             {
+                std::cout << Yinad[k] << "   " << nukj_r(k,j) << "   " << pow(Yinad[k], nukj_r(k,j)) << std::endl;
+             }
              rfj *= pow(Yinad[k], nukj_r(k,j));
              rbj *= pow(Yinad[k], nukj_p(k,j));
          }
          rj(j) = kfj * rfj - kbj * rbj;
      }
+     exit(0);
      // Finally, compute the RHS for these species.
      VectorXd omega_dot_inad;
      omega_dot_inad = nukj * rj;
@@ -247,6 +251,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
      }
   }
+  //for (int k = 0; k < dim; k++)
+  //{
+  //    std::cout << dYdt[k] << std::endl;
+  //}
+  //std::cout << "\n" << std::endl;
+  //std::cout << Qnum << "/" << Qden << std::endl;
+  //exit(0);
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species
@@ -269,7 +280,12 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   }
 
   // Right hand side of energy equation.
-  dYdt[n_species] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
+  dYdt[dim-1] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
+  //for (int k = 0; k < dim; k++)
+  //{
+  //    std::cout << dYdt[k] << std::endl;
+  //}
+  //exit(0);
   
   return GSL_SUCCESS;
 }
@@ -335,6 +351,7 @@ void hydrogenComputeModel(
          // t is the current time
          // finalTime is the integration time
          // Y is the solution at time t
+         std::cout << "Time = " << t << std::endl;
          gsl_odeiv2_driver_apply( d, &t, finalTime, Y );
          if (Y[0] < 0.999*initialValues[0])
          {
