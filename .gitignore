@@ -18,7 +18,7 @@
 # these rules might exclude image files for figures etc.
 # *.ps
 # *.eps
-# *.pdf
+ *.pdf
 
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
 *.bbl
@@ -179,3 +179,6 @@ TSWLatexianTemp*
 
 # KBibTeX
 *~[0-9]*
+
+# C++ Files
+*.o
