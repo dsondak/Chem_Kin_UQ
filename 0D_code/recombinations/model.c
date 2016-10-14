@@ -161,14 +161,35 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      std::vector<double> beta_0 (n_atoms, 0.0);
      std::vector<double> alpha_1(n_atoms, 0.0);
      std::vector<double> alpha_2(n_atoms, 0.0);
-     alpha_0[0] = 10.0; //10.0;
-     alpha_0[1] = 15.0; //20.0;
-     beta_0[0]  = 200.0; //100.0; //25.0;
-     beta_0[1]  = 250.0; //250.0; //50.0;
-     alpha_1[0] = 1.0e-03;
-     alpha_1[1] = 2.0e-03;
-     alpha_2[0] = 5.0e-02;
-     alpha_2[1] = 1.0e-01;
+
+     alpha_0[0] = 0.5; //10.0; //10.0;
+     alpha_0[1] = 0.19; //15.0; //20.0;
+     //alpha_0[0] = 21.0; //10.0; //10.0;
+     //alpha_0[1] = 30.0; //15.0; //20.0;
+
+
+     // Correct values (based on H and O)
+     //beta_0[0] = -3.8;
+     //beta_0[1] = 25.0;
+     beta_0[0] = 250.8;
+     beta_0[1] = 250.0;
+
+
+     // ALPHA_{i1}
+     // Correct values (based on H and O)
+     //alpha_1[0] = 0.0;
+     //alpha_1[1] = 25.0;
+     alpha_1[0] = 0.0;
+     alpha_1[1] = 0.0;
+
+
+     // ALPHA_{i2}
+     // Correct values (based on H and O)
+     //alpha_2[0] = 0.0;
+     //alpha_2[1] = -6.8;
+     alpha_2[0] = 0.0;
+     alpha_2[1] = 0.0;
+
      for (int m = 0; m < n_atoms; m++)
      {
          h_prime[m]  = alpha_0[m] + 
@@ -191,8 +212,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      VectorXd beta(Mc);
      VectorXd Ea(Mc);
      A    << 1.0e+10, 2.0e+05, 1.1e+07, 3.2e+02, 1.0e+09, 1.5e+03, 2.7e+06;
-     beta << 0.0, 1.0, 1.5, 1.1, 0.5, 0.25, 1.9;
+     //A    << 1.0, 2.0, 1.1, 3.2, 1.0, 1.5, 2.7; // Pretty close to reduced model
+     //A    << 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00;
+     //A    << 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02;
+     beta << 0.0, 1.0, 0.1, 1.1, 0.5, 0.25, -0.25;
+     //beta << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
      Ea   << 2.5e+05, 2.5e+05, 2.1e+05, 2.5e+05, 2.0e+05, 2.7e+05, 2.0e+05;
+     //Ea   << 1.5e+05, 2.5e+05, 2.1e+05, 1.5e+05, 2.0e+05, 2.7e+05, 1.0e+05;
      
      double kfj; // forward reaction rate coeff.
      double kej; // equilibrium constant
@@ -224,6 +250,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          }
          kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
          kbj = kfj / kej;
+         //std::cout << kfj << "   " << exp_arg_j << "   " << pa_RT << "   " << gamma(j) << "   " << kej << "   " << kbj << std::endl;
          rfj = 1.0;
          rbj = 1.0;
          // Calculate reaction rates
@@ -253,17 +280,29 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
          Qnum += h_prime[k] * dYdt[(dim - 1) - n_atoms + k];
          Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
      }
+     //std::cout << omega_dot_inad << std::endl;
+     //std::cout << "Qnum / Qden = " << Qnum << "/" << Qden << std::endl;
   }
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species
+  //std::vector<double> ent(n_species, 0.);  // Entropy for each species
   std::vector<double> cp(n_species, 0.); // Specific pressure for each species
 
+  //std::cout << "Qnum = " << Qnum << "   " << "Qden = " << Qden << std::endl;
   for (unsigned int s = 0; s < n_species; s++)
   { // Get numerator and denominator in energy equation (sum of species)
       // Get enthalpy and convert to molar from mass basis
       // Note that R_universal/Rs = Ws where Ws is the molecular weight of species s
       h[s] = rxn.Thermo->h(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
+      //ent[s] = rxn.Thermo->s_over_R(temp_cache, s) * R_universal;
+/*
+      std::cout << rxn.Chem_mixture->R(s) << "   " 
+                << Antioch::Constants::R_universal<double>() << "   "  
+                << Antioch::Constants::R_universal<double>() / rxn.Chem_mixture->R(s) << "   "
+                << rxn.Thermo->h(temp_cache,s) << "   " 
+                << h[s] <<  std::endl;
+*/
       // get cp and convert from mass to molar
       cp[s] = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
       // Numerator in energy equation: h_s * dx_s/dt
@@ -271,6 +310,16 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       // Denominator in energy equation: cp_s * x_s
       Qden += cp[s] * molar_densities[s];
   }
+
+  //std::cout << "\n\n\n" << std::endl;
+  //std::cout << "omega_dot = " << mole_sources << std::endl;
+  //std::cout << "x         = " << molar_densities << std::endl;
+  //std::cout << "h         = " << h << std::endl;
+  //std::cout << "s         = " << ent << std::endl;
+  //std::cout << "cp        = " << cp << std::endl;
+  //std::cout << "Qnum = " << Qnum << "   " << "Qden = " << Qden << std::endl;
+  //std::cout << "\n\n\n" << std::endl;
+  //exit(0);
 
   // Right hand side of energy equation.
   dYdt[dim-1] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
@@ -305,9 +354,9 @@ void hydrogenComputeModel(
   gsl_odeiv2_system sys = {hydrogenFunction, hydrogenJacobian, dim, rxn};
   
   // Pass parameters to GSL ODE solver
-  double dt      = 1.0e-10; // initial time step size
-  double err_abs = 1.0e-16;  // Absolute error tolerance for adaptive stepping
-  double err_rel = 1.0e-08;   // Relative error tolerance for adaptive stepping
+  double dt      = 1.0e-06; // initial time step size
+  double err_abs = 1.0e-06;  // Absolute error tolerance for adaptive stepping
+  double err_rel = 1.0e-03;   // Relative error tolerance for adaptive stepping
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new( &sys, gsl_odeiv2_step_rkf45, dt, err_abs, err_rel);   
 
   // Initialize solution field
@@ -356,6 +405,8 @@ void hydrogenComputeModel(
 
   } // end loop over time points
 
+  std::cout << "\n\n" << "Ignition!" << "\n\n" << std::endl;
+
   // Reinitialize solution field
   for (int i = 0; i < dim; i++)
   {
@@ -375,6 +426,7 @@ void hydrogenComputeModel(
       // t is the current time
       // finalTime is the integration time
       // Y is the solution at time t
+      std::cout << "Time = " << t << std::endl;
       int status = gsl_odeiv2_driver_apply( d, &t, finalTime, Y );
       //std::cout << "t = " << t << std::endl;
       // Store results in return field
