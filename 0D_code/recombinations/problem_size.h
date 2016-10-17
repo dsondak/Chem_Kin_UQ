@@ -20,7 +20,6 @@ class problem_size
     MatrixXd nukj_r; // Reactant stoichiometric coeffs
     MatrixXd nukj_p; // Product stoichiometric coeffs
     MatrixXd nukj; // Total stoichiometric coeffs
-    MatrixXi species_to_reaction_map; // Map for species in each reaction
     VectorXd gamma; // Exponent in equilibrium constant
 };
 

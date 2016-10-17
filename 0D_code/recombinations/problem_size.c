@@ -20,7 +20,6 @@ problem_size::problem_size (int n_species_from_user, int extra_from_user,
     nukj_r(n_species + n_atoms, 7), // Reactant stoichiometric coeffs
     nukj_p(n_species + n_atoms, 7),  // Product stoichiometric coeffs
     nukj(n_species + n_atoms, 7), // Total coeffs.
-    species_to_reaction_map(7, 3), // Map for species in each reaction
     gamma(7) // Exponent in equilibrium constant
 {
 
@@ -44,20 +43,6 @@ problem_size::problem_size (int n_species_from_user, int extra_from_user,
     for (int j = 0; j < nukj.cols(); j++)
     {
         gamma(j) = nukj.col(j).sum();
-        //std::cout << nukj.col(j).sum() << std::endl;
-        //std::cout << gamma(j) << std::endl;
     }
-
-    // Species to reaction map
-    int Nc;
-    Nc = n_species + n_atoms;
-    //MatrixXi species_to_reaction_map(7, 3);
-    species_to_reaction_map << 7, 7,  Nc, 
-                               8, 8,  Nc,
-                               7, Nc, Nc,
-                               8, Nc, Nc,
-                               7, 8,  Nc,
-                               7, 8,  8, 
-                               7, 7,  8;
 
 }
