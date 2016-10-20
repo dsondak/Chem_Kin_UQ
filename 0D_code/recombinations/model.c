@@ -62,6 +62,89 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using Eigen::MatrixXi;
 
+
+Eigen::VectorXd reaction_rate(std::vector<double> Yinad, double temperature, 
+                              std::vector<double> h_prime, std::vector<double> s_prime, 
+                              reaction_info rxn)
+{
+     double R_universal = Antioch::Constants::R_universal<double>();
+     Antioch::TempCache<double> temp_cache(temperature);
+
+     double RT = R_universal * temperature;
+     double pa = 1.0e+05; // 1 bar in Pa
+     double pa_RT = pa / RT;
+
+     int n_atoms = rxn.ProblemInfo.n_atoms;
+
+     MatrixXd nukj_r = rxn.ProblemInfo.nukj_r;
+     MatrixXd nukj_p = rxn.ProblemInfo.nukj_p;
+     MatrixXd nukj   = rxn.ProblemInfo.nukj;
+     VectorXd gamma = rxn.ProblemInfo.gamma;
+
+     int Mc = 5; // FIXME  Remove hard coding
+     int Nc = rxn.ProblemInfo.n_species + n_atoms;
+     double exp_arg_j;
+
+     // Make up some Arrhenius coeffs. for now
+     VectorXd A(Mc);
+     VectorXd beta(Mc);
+     VectorXd Ea(Mc);
+
+     // 5 RXN TESTS 
+     A    << 1.0e+08, 2.0e-02, 1.0e+07, 1.5e+03, 1.17e+03;
+     beta << 0.0, 1.0, 0.5, 0.25, 0.1;
+     Ea   << 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05;
+     //A    << 1.0e+10, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
+     //A    << 1.0e+02, 1.0e+02, 1.0e+02, 1.0e+02, 1.0e+02;
+     //beta << 0.0, 1.0, 0.5, 0.25, -0.25;
+     //Ea   << 2.5e+05, 2.5e+05, 2.5e+05, 2.5e+05, 2.5e+05;
+     //Ea   << 0.0, 0.0, 0.0, 0.0, 0.0;
+     
+     double kfj; // forward reaction rate coeff.
+     double kej; // equilibrium constant
+     double kbj; // backward reaction rate coeff.
+     double rfj; // forward progress rate
+     double rbj; // backware progress rate
+
+     VectorXd rj(Mc); // progress rate
+
+     // Set up s/R - h_RT for each species
+     std::vector<double> delta_k(Nc, 0.0);
+     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+     {
+         delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
+                      rxn.Thermo->h_over_RT(temp_cache, k);
+     }
+     for (int k = 0; k < n_atoms; k++)
+     {
+         delta_k[rxn.ProblemInfo.n_species + k] = s_prime[k] / R_universal - h_prime[k] / RT;
+     }
+
+     for (int j = 0; j < Mc; j++)
+     {
+         kfj = A(j) * pow(temperature, beta(j)) * exp(-Ea(j) / RT);
+         exp_arg_j = 0.0;
+         for (int k = 0; k < Nc; k++)
+         {
+             exp_arg_j  += nukj(k,j) * delta_k[k];
+         }
+         kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
+         kbj = kfj / kej;
+         rfj = 1.0;
+         rbj = 1.0;
+         // Calculate reaction rates
+         for (int k = 0; k < Nc; k++)
+         {
+             rfj *= pow(Yinad[k], nukj_r(k,j));
+             rbj *= pow(Yinad[k], nukj_p(k,j));
+         }
+         rj(j) = kfj * rfj - kbj * rbj;
+     }
+
+    return rj;
+}
+
+
 /***************************
  *
  * hydrogenFunction
@@ -96,10 +179,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // Prepare Antioch to get chemistry and thermodynamic information
   double temperature = Y[dim-1];
   Antioch::TempCache<double> temp_cache(temperature);
+  //std::cout << temperature << std::endl;
 
   // Get some thermodynamic data for each species
   std::vector<double> h_RT_minus_s_R(n_species);
   rxn.Thermo->h_RT_minus_s_R(temp_cache, h_RT_minus_s_R);
+
+  //std::cout << h_RT_minus_s_R << std::endl;
 
   // Perform kinetics calculations 
   // (basically just gives RHS of ODEs for each species)
@@ -128,6 +214,14 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       dYdt[i] = mole_sources[i];
   }
 
+/*
+  for (unsigned int k = 0; k < dim; k++)
+  {
+      std::cout << "dY_" << k << "/dt = " << dYdt[k] << "\n";
+  }
+  std::cout << "\n";
+*/
+
   // Needed for energy equation
   double Qnum = 0.0;
   double Qden = 0.0;
@@ -150,45 +244,35 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      {
          Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
      }
-     double RT = R_universal * temperature;
-     double pa = 1.0e+05; // 1 bar in Pa
-     double pa_RT = pa / RT;
+
+     //std::cout << Yinad << std::endl;
+
+     int Mc = 5; // FIXME  Remove hard-coding.
+
      std::vector<double> h_prime(n_atoms, 0.0);  // Enthalpy for catchalls 
      std::vector<double> cp_prime(n_atoms, 0.0); // Specific heat (constant cp) for catchalls 
      std::vector<double> s_prime(n_atoms, 0.0);  // Entropy for catchalls 
+
      // Coeffs for catchall thermo
      std::vector<double> alpha_0(n_atoms, 0.0);
      std::vector<double> beta_0 (n_atoms, 0.0);
      std::vector<double> alpha_1(n_atoms, 0.0);
      std::vector<double> alpha_2(n_atoms, 0.0);
 
-     alpha_0[0] = 0.5; //10.0; //10.0;
-     alpha_0[1] = 0.19; //15.0; //20.0;
-     //alpha_0[0] = 21.0; //10.0; //10.0;
-     //alpha_0[1] = 30.0; //15.0; //20.0;
+     alpha_0[0] = 10.5; // 21.12e+04; // 500.0; //10.5; //0.5; //10.0; //10.0;
+     alpha_0[1] = 15.19; // 21.12e+04; // 500.0; // 24.19e+04; //15.19; //0.19;  //15.0; //20.0;
 
-
-     // Correct values (based on H and O)
-     //beta_0[0] = -3.8;
-     //beta_0[1] = 25.0;
-     beta_0[0] = 250.8;
-     beta_0[1] = 250.0;
-
+     // Our standard values
+     beta_0[0] = -0.382; //250.8;
+     beta_0[1] =  24.61; //250.0;
 
      // ALPHA_{i1}
-     // Correct values (based on H and O)
-     //alpha_1[0] = 0.0;
-     //alpha_1[1] = 25.0;
-     alpha_1[0] = 0.0;
-     alpha_1[1] = 0.0;
-
+     alpha_1[0] = 1.0e-05; //20.79; //1.0e-03;
+     alpha_1[1] = 1.0e-05; //24.44; // 2.0e-03;
 
      // ALPHA_{i2}
-     // Correct values (based on H and O)
-     //alpha_2[0] = 0.0;
-     //alpha_2[1] = -6.8;
-     alpha_2[0] = 0.0;
-     alpha_2[1] = 0.0;
+     alpha_2[0] = 1.00e-03; // 0.0; //1.0e-05;
+     alpha_2[1] = 6.82e-03; //-6.82e-03; // 2.0e-05;
 
      for (int m = 0; m < n_atoms; m++)
      {
@@ -200,70 +284,17 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
                        alpha_1[m] * log(temperature) + 
                        2.0 * alpha_2[m] * temperature;
      }
-     MatrixXd nukj_r = rxn.ProblemInfo.nukj_r;
-     MatrixXd nukj_p = rxn.ProblemInfo.nukj_p;
-     MatrixXd nukj   = rxn.ProblemInfo.nukj;
-     VectorXd gamma = rxn.ProblemInfo.gamma;
-     int Mc = 7; // FIXME  Remove hard coding
-     int Nc = rxn.ProblemInfo.n_species + n_atoms;
-     double exp_arg_j;
-     // Make up some Arrhenius coeffs. for now
-     VectorXd A(Mc);
-     VectorXd beta(Mc);
-     VectorXd Ea(Mc);
-     A    << 1.0e+10, 2.0e+05, 1.1e+07, 3.2e+02, 1.0e+09, 1.5e+03, 2.7e+06;
-     //A    << 1.0, 2.0, 1.1, 3.2, 1.0, 1.5, 2.7; // Pretty close to reduced model
-     //A    << 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00, 1.0e+00;
-     //A    << 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02, 2.5e+02;
-     beta << 0.0, 1.0, 0.1, 1.1, 0.5, 0.25, -0.25;
-     //beta << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-     Ea   << 2.5e+05, 2.5e+05, 2.1e+05, 2.5e+05, 2.0e+05, 2.7e+05, 2.0e+05;
-     //Ea   << 1.5e+05, 2.5e+05, 2.1e+05, 1.5e+05, 2.0e+05, 2.7e+05, 1.0e+05;
-     
-     double kfj; // forward reaction rate coeff.
-     double kej; // equilibrium constant
-     double kbj; // backward reaction rate coeff.
-     double rfj; // forward progress rate
-     double rbj; // backware progress rate
 
-     VectorXd rj(Mc); // progress rate
+     Eigen::VectorXd rj(Mc);
+     rj = reaction_rate(Yinad, temperature, h_prime, s_prime, rxn);
 
-     // Set up s/R - h_RT for each species
-     std::vector<double> delta_k(rxn.ProblemInfo.n_species + n_atoms, 0.0);
-     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
-     {
-         delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
-                      rxn.Thermo->h_over_RT(temp_cache, k);
-     }
-     for (int k = 0; k < n_atoms; k++)
-     {
-         delta_k[rxn.ProblemInfo.n_species + k] = s_prime[k] / R_universal - h_prime[k] / RT;
-     }
-
-     for (int j = 0; j < Mc; j++)
-     {
-         kfj = A(j) * pow(temperature, beta(j)) * exp(-Ea(j) / RT);
-         exp_arg_j = 0.0;
-         for (int k = 0; k < rxn.ProblemInfo.n_species + n_atoms; k++)
-         {
-             exp_arg_j  += nukj(k,j) * delta_k[k];
-         }
-         kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
-         kbj = kfj / kej;
-         //std::cout << kfj << "   " << exp_arg_j << "   " << pa_RT << "   " << gamma(j) << "   " << kej << "   " << kbj << std::endl;
-         rfj = 1.0;
-         rbj = 1.0;
-         // Calculate reaction rates
-         for (int k = 0; k < Nc; k++)
-         {
-             rfj *= pow(Yinad[k], nukj_r(k,j));
-             rbj *= pow(Yinad[k], nukj_p(k,j));
-         }
-         rj(j) = kfj * rfj - kbj * rbj;
-     }
      // Finally, compute the RHS for these species.
      VectorXd omega_dot_inad;
+     MatrixXd nukj   = rxn.ProblemInfo.nukj;
      omega_dot_inad = nukj * rj;
+     //std::cout << omega_dot_inad << std::endl;
+     //exit(0);
+
      // The very last step is to add omega_dot_inad to the 
      // dYdt and then move on to the energy equation.
      for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
@@ -272,24 +303,36 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      }
      for (int k = 0; k < n_atoms; k++)
      {
-         dYdt[(dim - 1) - n_atoms + k] += omega_dot_inad(rxn.ProblemInfo.n_species + k);
+         dYdt[(dim - 1) - n_atoms + k] = omega_dot_inad(rxn.ProblemInfo.n_species + k);
      }
+
      // Get catchall contribution to energy equation
      for (unsigned int k = 0; k < n_atoms; k++)
      {
          Qnum += h_prime[k] * dYdt[(dim - 1) - n_atoms + k];
          Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
      }
+     //std::cout << "Qnum Catchalls = " << Qnum << std::endl;
+     //std::cout << "Qnum = " << Qnum << "   " << "Qden = " << Qden << std::endl << std::endl;
      //std::cout << omega_dot_inad << std::endl;
-     //std::cout << "Qnum / Qden = " << Qnum << "/" << Qden << std::endl;
+
+     //std::cout << "omega_dot_inad = " << omega_dot_inad << "\n" << std::endl;
   }
+
+/*
+  for (int i = 0; i < dim; i++)
+  {
+      std::cout << "dx_" << i << "dt = " << dYdt[i] << std::endl;
+  }
+  std::cout << "\n" << std::endl;
+*/
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species
-  //std::vector<double> ent(n_species, 0.);  // Entropy for each species
+  std::vector<double> ent(n_species, 0.);  // Entropy for each species
   std::vector<double> cp(n_species, 0.); // Specific pressure for each species
 
-  //std::cout << "Qnum = " << Qnum << "   " << "Qden = " << Qden << std::endl;
+  double Qnum_real = 0.0;
   for (unsigned int s = 0; s < n_species; s++)
   { // Get numerator and denominator in energy equation (sum of species)
       // Get enthalpy and convert to molar from mass basis
@@ -303,23 +346,36 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
                 << rxn.Thermo->h(temp_cache,s) << "   " 
                 << h[s] <<  std::endl;
 */
+      //std::cout << "h_" << s << " = " << h[s] << "   " << "s_" << s << " = " << ent[s] << "   ";
       // get cp and convert from mass to molar
       cp[s] = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
       // Numerator in energy equation: h_s * dx_s/dt
-      Qnum += h[s] * mole_sources[s];
+      Qnum  += h[s] * mole_sources[s];
+      Qnum_real += h[s] * mole_sources[s];
       // Denominator in energy equation: cp_s * x_s
       Qden += cp[s] * molar_densities[s];
   }
 
+  //std::cout <<  "\n";
   //std::cout << "\n\n\n" << std::endl;
   //std::cout << "omega_dot = " << mole_sources << std::endl;
   //std::cout << "x         = " << molar_densities << std::endl;
   //std::cout << "h         = " << h << std::endl;
   //std::cout << "s         = " << ent << std::endl;
   //std::cout << "cp        = " << cp << std::endl;
+  //std::cout << "x = " << molar_densities << std::endl;
+  //std::cout << "dxdt = " << mole_sources << std::endl;
+  //std::cout << "Qnum total = " << Qnum << std::endl;
+  //std::cout << "Qnum real = " << Qnum_real << std::endl << std::endl;
   //std::cout << "Qnum = " << Qnum << "   " << "Qden = " << Qden << std::endl;
   //std::cout << "\n\n\n" << std::endl;
   //exit(0);
+
+  if (Qden <= 0)
+  {
+      std::cout << "Disaster!  Qden <=0.  In fact, Qden = " << Qden << std::endl;
+      exit(0);
+  }
 
   // Right hand side of energy equation.
   dYdt[dim-1] = (-Qnum + rxn.ProblemInfo.heating_rate) / Qden;
@@ -355,8 +411,8 @@ void hydrogenComputeModel(
   
   // Pass parameters to GSL ODE solver
   double dt      = 1.0e-06; // initial time step size
-  double err_abs = 1.0e-06;  // Absolute error tolerance for adaptive stepping
-  double err_rel = 1.0e-03;   // Relative error tolerance for adaptive stepping
+  double err_abs = 1.0e-16;  // Absolute error tolerance for adaptive stepping
+  double err_rel = 1.0e-06;   // Relative error tolerance for adaptive stepping
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new( &sys, gsl_odeiv2_step_rkf45, dt, err_abs, err_rel);   
 
   // Initialize solution field
@@ -411,14 +467,22 @@ void hydrogenComputeModel(
   for (int i = 0; i < dim; i++)
   {
       Y[i] = initialValues[i];
-  };
+  }
 
   // Prepare for time integrator
   t = 0.0; // Initial time
 
   // Time integration
   int num_times = timePoints.size();
-  //std::cout << num_times << std::endl;
+
+  int n_atoms = rxn->ProblemInfo.n_atoms;
+
+  std::ofstream progress_rates;
+  progress_rates.open("rj.txt");
+
+  std::ofstream reaction_rates;
+  reaction_rates.open("omega_k.txt");
+
   for (unsigned int i = 0; i < num_times; i++)
   { // Integration loop
       finalTime = timePoints[i]; // Integration time
@@ -428,7 +492,82 @@ void hydrogenComputeModel(
       // Y is the solution at time t
       std::cout << "Time = " << t << std::endl;
       int status = gsl_odeiv2_driver_apply( d, &t, finalTime, Y );
-      //std::cout << "t = " << t << std::endl;
+
+      double temperature = Y[dim-1];
+
+      // Create a new vector containing only relevant species
+      std::vector<double> Yinad(rxn->ProblemInfo.n_species + n_atoms, 0.0);
+      // First just copy participating species to Yinad
+      for (int k = 0; k < rxn->ProblemInfo.n_species; k++)
+      {
+          Yinad[k] = Y[k];
+      }
+      // Next copy catchall species to Yinad
+      for (int k = 0; k < n_atoms; k++)
+      {
+          Yinad[rxn->ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
+      }
+
+      int Mc = 5; // FIXME  Remove hard-coding.
+
+      std::vector<double> h_prime(n_atoms, 0.0);  // Enthalpy for catchalls 
+      std::vector<double> cp_prime(n_atoms, 0.0); // Specific heat (constant cp) for catchalls 
+      std::vector<double> s_prime(n_atoms, 0.0);  // Entropy for catchalls 
+
+      // Coeffs for catchall thermo
+      std::vector<double> alpha_0(n_atoms, 0.0);
+      std::vector<double> beta_0 (n_atoms, 0.0);
+      std::vector<double> alpha_1(n_atoms, 0.0);
+      std::vector<double> alpha_2(n_atoms, 0.0);
+
+      alpha_0[0] = 100.5; // 21.12e+04; // 500.0; //10.5; //0.5; //10.0; //10.0;
+      alpha_0[1] = 150.19; // 21.12e+04; // 500.0; // 24.19e+04; //15.19; //0.19;  //15.0; //20.0;
+
+      // Our standard values
+      beta_0[0] = -0.382; //250.8;
+      beta_0[1] =  24.61; //250.0;
+
+      // ALPHA_{i1}
+      alpha_1[0] = 1.0e-05; //20.79; //1.0e-03;
+      alpha_1[1] = 1.0e-05; //24.44; // 2.0e-03;
+
+      // ALPHA_{i2}
+      alpha_2[0] = 1.00e-03; // 0.0; //1.0e-05;
+      alpha_2[1] = 6.82e-03; //-6.82e-03; // 2.0e-05;
+
+
+      for (int m = 0; m < n_atoms; m++)
+      {
+          h_prime[m]  = alpha_0[m] + 
+                        alpha_1[m] * temperature + 
+                        alpha_2[m] * temperature * temperature;
+          cp_prime[m] = alpha_1[m] + 2.0 * alpha_2[m] * temperature;
+          s_prime[m]  = beta_0[m]  + 
+                        alpha_1[m] * log(temperature) + 
+                        2.0 * alpha_2[m] * temperature;
+      }
+
+      Eigen::VectorXd rj(Mc);
+      VectorXd omega_dot_inad;
+      rj = reaction_rate(Yinad, temperature, h_prime, s_prime, *rxn);
+
+      MatrixXd nukj   = rxn->ProblemInfo.nukj;
+      omega_dot_inad = nukj * rj;
+
+      progress_rates << t << "   ";
+      for (int j = 0; j < Mc; j++)
+      {
+          progress_rates << rj(j) << "   ";
+      }
+      progress_rates << "\n";
+
+      reaction_rates << t << "   ";
+      for (int k = 0; k < rxn->ProblemInfo.n_species + n_atoms; k++)
+      {
+          reaction_rates << omega_dot_inad(k) << "   ";
+      }
+      reaction_rates << "\n";
+
       // Store results in return field
       for (unsigned int j = 0; j < dim; j++)
       {
@@ -438,6 +577,9 @@ void hydrogenComputeModel(
   } // end loop over time points
   returnValues[dim * num_times] = time_ig;
   returnValues[dim * num_times + 1] = Tig;
+
+  progress_rates.close();
+  reaction_rates.close();
 
   // deallocate memory   
   gsl_odeiv2_driver_free( d );
