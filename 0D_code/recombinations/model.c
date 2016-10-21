@@ -91,14 +91,15 @@ Eigen::VectorXd reaction_rate(std::vector<double> Yinad, double temperature,
      VectorXd Ea(Mc);
 
      // 5 RXN TESTS 
-     A    << 1.0e+08, 2.0e-02, 1.0e+07, 1.5e+03, 1.17e+03;
-     beta << 0.0, 1.0, 0.5, 0.25, 0.1;
-     Ea   << 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05;
-     //A    << 1.0e+10, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
+     //A    << 1.0e+08, 2.0e-02, 1.0e+07, 1.5e+03, 1.17e+03;
+     beta << 0.5, 0.75, 0.5, 0.25, 0.1;
+     Ea   << 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05;
+     A    << 1.0e+09, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
      //A    << 1.0e+02, 1.0e+02, 1.0e+02, 1.0e+02, 1.0e+02;
      //beta << 0.0, 1.0, 0.5, 0.25, -0.25;
      //Ea   << 2.5e+05, 2.5e+05, 2.5e+05, 2.5e+05, 2.5e+05;
      //Ea   << 0.0, 0.0, 0.0, 0.0, 0.0;
+     //Ea   << 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05, 1.75e+05;
      
      double kfj; // forward reaction rate coeff.
      double kej; // equilibrium constant
@@ -259,20 +260,39 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      std::vector<double> alpha_1(n_atoms, 0.0);
      std::vector<double> alpha_2(n_atoms, 0.0);
 
-     alpha_0[0] = 10.5; // 21.12e+04; // 500.0; //10.5; //0.5; //10.0; //10.0;
-     alpha_0[1] = 15.19; // 21.12e+04; // 500.0; // 24.19e+04; //15.19; //0.19;  //15.0; //20.0;
+     double sig = 0.10;
 
-     // Our standard values
-     beta_0[0] = -0.382; //250.8;
-     beta_0[1] =  24.61; //250.0;
+     // Mean Values
+     alpha_0[0] = -3.90372558e+04; //100.5;
+     alpha_0[1] = -3.90372558e+04; //150.19;
+
+     // \pm 3std Values
+     alpha_0[0] += 3.0 * sig * alpha_0[0];
+     alpha_0[1] += 3.0 * sig * alpha_0[1];
+
+     // Mean Values
+     beta_0[0] = -17.0857829376; //-0.382;
+     beta_0[1] = -17.0857829376; // 24.61;
+
+     // \pm 3std Values
+     beta_0[0] += 3.0 * sig * beta_0[0];
+     beta_0[1] += 3.0 * sig * beta_0[1];
 
      // ALPHA_{i1}
-     alpha_1[0] = 1.0e-05; //20.79; //1.0e-03;
-     alpha_1[1] = 1.0e-05; //24.44; // 2.0e-03;
+     alpha_1[0] = 13.6559654; //1.0e-05;
+     alpha_1[1] = 13.6559654; //1.0e-05;
+
+     // \pm 3std Values
+     alpha_1[0] += 3.0 * sig * alpha_1[0];
+     alpha_1[1] += 3.0 * sig * alpha_1[1];
 
      // ALPHA_{i2}
-     alpha_2[0] = 1.00e-03; // 0.0; //1.0e-05;
-     alpha_2[1] = 6.82e-03; //-6.82e-03; // 2.0e-05;
+     alpha_2[0] = 1.20459536e-03; //1.00e-03;
+     alpha_2[1] = 1.20459536e-03; //6.82e-03;
+
+     // \pm 3std Values
+     alpha_2[0] += 3.0 * sig * alpha_2[0];
+     alpha_2[1] += 3.0 * sig * alpha_2[1];
 
      for (int m = 0; m < n_atoms; m++)
      {
@@ -411,7 +431,7 @@ void hydrogenComputeModel(
   
   // Pass parameters to GSL ODE solver
   double dt      = 1.0e-06; // initial time step size
-  double err_abs = 1.0e-16;  // Absolute error tolerance for adaptive stepping
+  double err_abs = 1.0e-12;  // Absolute error tolerance for adaptive stepping
   double err_rel = 1.0e-06;   // Relative error tolerance for adaptive stepping
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new( &sys, gsl_odeiv2_step_rkf45, dt, err_abs, err_rel);   
 
@@ -520,21 +540,39 @@ void hydrogenComputeModel(
       std::vector<double> alpha_1(n_atoms, 0.0);
       std::vector<double> alpha_2(n_atoms, 0.0);
 
-      alpha_0[0] = 100.5; // 21.12e+04; // 500.0; //10.5; //0.5; //10.0; //10.0;
-      alpha_0[1] = 150.19; // 21.12e+04; // 500.0; // 24.19e+04; //15.19; //0.19;  //15.0; //20.0;
+      double sig = 0.10;
 
-      // Our standard values
-      beta_0[0] = -0.382; //250.8;
-      beta_0[1] =  24.61; //250.0;
+      // Mean Values
+      alpha_0[0] = -3.90372558e+04; //100.5;
+      alpha_0[1] = -3.90372558e+04; //150.19;
+
+      // \pm 3std Values
+      alpha_0[0] += 3.0 * sig * alpha_0[0];
+      alpha_0[1] += 3.0 * sig * alpha_0[1];
+
+      // Mean Values
+      beta_0[0] = -17.0857829376; //-0.382;
+      beta_0[1] = -17.0857829376; // 24.61;
+
+      // \pm 3std Values
+      beta_0[0] += 3.0 * sig * beta_0[0];
+      beta_0[1] += 3.0 * sig * beta_0[1];
 
       // ALPHA_{i1}
-      alpha_1[0] = 1.0e-05; //20.79; //1.0e-03;
-      alpha_1[1] = 1.0e-05; //24.44; // 2.0e-03;
+      alpha_1[0] = 13.6559654; //1.0e-05;
+      alpha_1[1] = 13.6559654; //1.0e-05;
+
+      // \pm 3std Values
+      alpha_1[0] += 3.0 * sig * alpha_1[0];
+      alpha_1[1] += 3.0 * sig * alpha_1[1];
 
       // ALPHA_{i2}
-      alpha_2[0] = 1.00e-03; // 0.0; //1.0e-05;
-      alpha_2[1] = 6.82e-03; //-6.82e-03; // 2.0e-05;
+      alpha_2[0] = 1.20459536e-03; //1.00e-03;
+      alpha_2[1] = 1.20459536e-03; //6.82e-03;
 
+      // \pm 3std Values
+      alpha_2[0] += 3.0 * sig * alpha_2[0];
+      alpha_2[1] += 3.0 * sig * alpha_2[1];
 
       for (int m = 0; m < n_atoms; m++)
       {
