@@ -82,7 +82,7 @@ Eigen::VectorXd reaction_rate(std::vector<double> Yinad, double temperature,
      VectorXd gamma = rxn.ProblemInfo.gamma;
 
      int Mc = 5; // FIXME  Remove hard coding
-     int Nc = rxn.ProblemInfo.n_species + n_atoms;
+     int Nc = rxn.ProblemInfo.n_species;
      double exp_arg_j;
 
      // Make up some Arrhenius coeffs. for now
@@ -111,14 +111,22 @@ Eigen::VectorXd reaction_rate(std::vector<double> Yinad, double temperature,
 
      // Set up s/R - h_RT for each species
      std::vector<double> delta_k(Nc, 0.0);
-     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
-     {
+     // First just do H2 and O2
+     for (int k = 0; k < 2; k++)
+     {   
          delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
                       rxn.Thermo->h_over_RT(temp_cache, k);
      }
+     // Skipped H and O so need to decrement index by 2
+     for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+     {   
+         delta_k[k - 2] = rxn.Thermo->s_over_R(temp_cache, k) - 
+                      rxn.Thermo->h_over_RT(temp_cache, k);
+     }
+     // Now do catchalls (still need to decrement by 2)
      for (int k = 0; k < n_atoms; k++)
      {
-         delta_k[rxn.ProblemInfo.n_species + k] = s_prime[k] / R_universal - h_prime[k] / RT;
+         delta_k[rxn.ProblemInfo.n_species + k - 2] = s_prime[k] / R_universal - h_prime[k] / RT;
      }
 
      for (int j = 0; j < Mc; j++)
@@ -234,17 +242,22 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
      // Create a new vector containing only relevant species
      // This will not be necessary if the user supplies only 
      // the participating species
-     std::vector<double> Yinad(rxn.ProblemInfo.n_species + n_atoms, 0.0);
-     // First just copy participating species to Yinad
-     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
-     {
-         Yinad[k] = Y[k];
-     }
-     // Next copy catchall species to Yinad
-     for (int k = 0; k < n_atoms; k++)
-     {
-         Yinad[rxn.ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
-     }
+      std::vector<double> Yinad(rxn.ProblemInfo.n_species, 0.0);
+      // Skip H and O
+      for (int k = 0; k < 2; k++)
+      {
+          Yinad[k] = Y[k];
+      }
+      // Skipped H and O so decrement index by 2
+      for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+      {
+          Yinad[k - 2] = Y[k];
+      }
+      // Next copy catchall species to Yinad
+      for (int k = 0; k < n_atoms; k++)
+      {
+          Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
+      }
 
      //std::cout << Yinad << std::endl;
 
@@ -317,13 +330,20 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
 
      // The very last step is to add omega_dot_inad to the 
      // dYdt and then move on to the energy equation.
-     for (int k = 0; k < rxn.ProblemInfo.n_species; k++)
+     // First just do H2 and O2
+     for (int k = 0; k < 2; k++)
      {
          dYdt[k] += omega_dot_inad(k);
      }
+     // Skipping H and O so decrement index by 2
+     for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+     {
+         dYdt[k] += omega_dot_inad(k - 2);
+     }
+     // Now do catchalls
      for (int k = 0; k < n_atoms; k++)
      {
-         dYdt[(dim - 1) - n_atoms + k] = omega_dot_inad(rxn.ProblemInfo.n_species + k);
+         dYdt[(dim - 1) - n_atoms + k] = omega_dot_inad(rxn.ProblemInfo.n_species + k - 2);
      }
 
      // Get catchall contribution to energy equation
@@ -352,7 +372,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   std::vector<double> ent(n_species, 0.);  // Entropy for each species
   std::vector<double> cp(n_species, 0.); // Specific pressure for each species
 
-  double Qnum_real = 0.0;
+  //double Qnum_real = 0.0;
   for (unsigned int s = 0; s < n_species; s++)
   { // Get numerator and denominator in energy equation (sum of species)
       // Get enthalpy and convert to molar from mass basis
@@ -371,7 +391,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       cp[s] = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
       // Numerator in energy equation: h_s * dx_s/dt
       Qnum  += h[s] * mole_sources[s];
-      Qnum_real += h[s] * mole_sources[s];
+      //Qnum_real += h[s] * mole_sources[s];
       // Denominator in energy equation: cp_s * x_s
       Qden += cp[s] * molar_densities[s];
   }
@@ -516,16 +536,22 @@ void hydrogenComputeModel(
       double temperature = Y[dim-1];
 
       // Create a new vector containing only relevant species
-      std::vector<double> Yinad(rxn->ProblemInfo.n_species + n_atoms, 0.0);
+      std::vector<double> Yinad(rxn->ProblemInfo.n_species, 0.0);
       // First just copy participating species to Yinad
-      for (int k = 0; k < rxn->ProblemInfo.n_species; k++)
+      // Skip H and O
+      for (int k = 0; k < 2; k++)
       {
           Yinad[k] = Y[k];
+      }
+      // Skipped H and O so decrement index by 2
+      for (int k = 4; k < rxn->ProblemInfo.n_species; k++)
+      {
+          Yinad[k - 2] = Y[k];
       }
       // Next copy catchall species to Yinad
       for (int k = 0; k < n_atoms; k++)
       {
-          Yinad[rxn->ProblemInfo.n_species + k] = Y[(dim - 1) - n_atoms + k];
+          Yinad[rxn->ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
       }
 
       int Mc = 5; // FIXME  Remove hard-coding.
@@ -589,7 +615,7 @@ void hydrogenComputeModel(
       VectorXd omega_dot_inad;
       rj = reaction_rate(Yinad, temperature, h_prime, s_prime, *rxn);
 
-      MatrixXd nukj   = rxn->ProblemInfo.nukj;
+      MatrixXd nukj  = rxn->ProblemInfo.nukj;
       omega_dot_inad = nukj * rj;
 
       progress_rates << t << "   ";
@@ -600,7 +626,7 @@ void hydrogenComputeModel(
       progress_rates << "\n";
 
       reaction_rates << t << "   ";
-      for (int k = 0; k < rxn->ProblemInfo.n_species + n_atoms; k++)
+      for (int k = 0; k < rxn->ProblemInfo.n_species; k++)
       {
           reaction_rates << omega_dot_inad(k) << "   ";
       }
