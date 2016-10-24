@@ -17,7 +17,7 @@
 n_species     = 7                  # Number of species
 n_atoms       = 2                  # Number of atoms
 include_inad  = 1                  # Include inadequacy model
-n_extra       = 2                  # For inert? species (N2 and H2O2 for now)
+n_extra       = 1                  # For inert? species (N2 and H2O2 for now)
 n_phis        = 1                  # Number of phi ICs
 phis          = '1.0'              # Fuel ratios to use
 n_heating     = 1                  # Number of heating rates
