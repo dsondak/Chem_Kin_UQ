@@ -1,0 +1,38 @@
+#  -*-getpot-*-
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Input file for forward problem
+# 
+# The input parser supports a notion of sections which are defined by
+# the [section] syntax. You are allowed to have variables of the same
+# name so long as they are within unique section definitions.
+# 
+# $Id: input.txt 25123 2011-10-28 19:50:52Z karl $
+# ------------------------------------------------------------------------------
+
+#------------------------------------------
+# Global input variable definitions
+#------------------------------------------
+
+n_species     = 7     	    	 # Number of species
+n_atoms       = 2		 # Number of atoms
+n_extra       = 1                # For inert? atoms (N2 and H2O2 for now)
+n_phis        = 3                # Number of phi ICs
+n_T           = 1                # Number of initial temperatures
+n_heating     = 1                # Number of heating rates
+Temperatures  = 0                # Initial temperatures
+heat_rates    = 1                # Heating rates
+TO            = 450.0            # Initial temperature
+heating_rate  = 5.0e+06          # Heating rate
+time_points   = 2.0e-5           # Sample every time_points
+num_times     = 10               # Take this many samples
+num_reactions = 5                # Number of reactions in reduced model
+fuel          = 2.0              # Initial fuel concentration (H2 here)
+oxidizer_i    = 1.0              # Initial oxidizer concentration (O2 here)
+nitrogen      = 3.78             # Initial N2 concentration
+specieslist   = '2 3 4 9 2 3 6 18 12' # Prime number representation of species
+prime_sieve   = '2 3'                 # Prime number representation of species (first H then O)
+thermo        = 'nasa7_thermo.xml' # Input file for thermodynamics
+reactionset   = 'five_rxn.xml'     # Input file for reactions
+time_ig       = 0.019462           # Ignition time of detailed model
+Tig           = 919.837099088      # Ignition temperature of detailed model

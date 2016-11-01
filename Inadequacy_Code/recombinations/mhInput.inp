@@ -1,0 +1,88 @@
+###############################################
+# UQ Environment
+###############################################
+env_numSubEnvironments   = 1
+env_subDisplayFileName   = outputData/display_env
+env_subDisplayAllowAll   = 1
+env_displayVerbosity     = 0
+env_seed                 = -1
+
+###############################################
+# Statistical inverse problem (ip)
+###############################################
+ip_computeSolution      = 1
+ip_dataOutputFileName   = outputData/sip
+ip_seedWithMAPEstimator = 0
+ip_useOptimizerMonitor  = 0
+
+ip_optimizer_maxIterations = 25
+ip_optimizer_finiteDifferenceStepSize = 1.0e-9
+ip_optimizer_tolerance = 1.0e-3
+ip_optimizer_solverType = bfgs2
+ip_optimizer_fstepSize = 1.0e-01
+ip_optimizer_fdfstepSize = 1.0e-01
+ip_optimizer_lineTolerance = 1.0e-01
+
+# Optimizer options:
+# 
+# fletcher_reeves_cg
+# polak_ribiere_cg
+# bfgs
+# bfgs2
+# steepest_descent
+# nelder_mead
+# nelder_mead2
+# nelder_mead2_rand
+
+###############################################
+# Information for Metropolis-Hastings algorithm
+###############################################
+ip_mh_dataOutputFileName   = outputData/sip
+#ip_mh_dataOutputFileType   = txt
+
+ip_mh_rawChain_dataInputFileName    = . 
+ip_mh_rawChain_size                 = 100001
+ip_mh_rawChain_generateExtra        = 0
+ip_mh_rawChain_displayPeriod        = 10
+ip_mh_rawChain_measureRunTimes      = 1
+ip_mh_rawChain_dataOutputFileName   = outputData/sip_raw_chain
+
+ip_mh_displayCandidates             = 1
+ip_mh_putOutOfBoundsInChain         = 0 
+ip_mh_dr_maxNumExtraStages          = 1
+ip_mh_dr_listOfScalesForExtraStages = 5. #10. #20.
+ip_mh_am_initialNonAdaptInterval    = 1000
+ip_mh_am_adaptInterval              = 1000
+ip_mh_am_eta                        = 0.045  	#(2.4^2)/d, d is the dimension of the problem
+ip_mh_am_epsilon                    = 1.0e-5
+
+ip_mh_doLogitTransform              = 0
+
+ip_mh_filteredChain_generate             = 1
+ip_mh_filteredChain_discardedPortion     = 0.
+ip_mh_filteredChain_lag                  = 20
+ip_mh_filteredChain_dataOutputFileName   = outputData/sip_filtered_chain
+
+###############################################
+# Statistical forward problem (fp)
+###############################################
+fp_help                 = anything
+fp_computeSolution      = 1
+fp_computeCovariances   = 0
+fp_computeCorrelations  = 0
+fp_dataOutputFileName   = outputData/sfp
+
+###############################################
+# 'fp_': information for Monte Carlo algorithm
+###############################################
+fp_mc_help                 = anything
+fp_mc_dataOutputFileName   = outputData/sfp
+
+fp_mc_pseq_dataOutputFileName   = outputData/sfp_p_seq
+
+fp_mc_qseq_dataInputFileName    = . 
+fp_mc_qseq_size                 = 20000
+fp_mc_qseq_displayPeriod        = 20000
+fp_mc_qseq_measureRunTimes      = 1
+fp_mc_qseq_dataOutputFileName   = outputData/sfp_qoi_seq
+
