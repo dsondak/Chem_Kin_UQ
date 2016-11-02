@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------
  *
- ***   stochastic_operator.c   ***
+ ***   inadequacy_model.c   ***
  *
  * Stochastic operator class.
  *
@@ -22,263 +22,127 @@
  *
  *-----------------------------------------------------------------*/
 
-#include "stochastic_operator.h"
+#include "inadequacy_model.h"
+#include "reaction_info.h"
 #include <iostream>
 #include <stdlib.h>
 #include <grvy.h>
+// Eigen functions
 #include <Eigen/Dense>
+//antioch
+#include <antioch/kinetics_evaluator.h>
 
 using Eigen::MatrixXd;
-using Eigen::MatrixXi;
 using Eigen::VectorXd;
 
-int gcd(int a, int b)
-{
-   // This is a function to compute the gcd of integers a and b
-   // Taken from:
-   // http://codereview.stackexchange.com/questions/66711/greatest-common-divisor
-   return b == 0 ? a : gcd(b, a%b);
-}
-
-stochastic_operator::stochastic_operator (int n_species_from_user, int n_atoms_from_user, int extra_from_user)
+inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user)
 :
     n_species(n_species_from_user), // set n_species = n_species_from_user
-    n_atoms(n_atoms_from_user),
-    n_extra(extra_from_user),
-    species_list(n_species + n_atoms),
-    species_list_m(n_species + n_atoms),
-    prime_atoms(n_atoms),
-    atoms(n_species + n_atoms),
-    iatoms(n_species + n_atoms),
-    Cmat(n_species + n_atoms, n_species),
-    Pmat(n_species, n_species + n_atoms),
-    Smat(n_species + n_atoms, n_species + n_atoms)
+    n_atoms(n_atoms_from_user),     // number of atoms in the system
+    n_extra(extra_from_user),       // number of inert species
+    nukj_r(n_species, 5),           // Reactant stoichiometric coeffs
+    nukj_p(n_species, 5),           // Product stoichiometric coeffs
+    nukj(n_species, 5),             // Total coeffs.
+    gamma(5),                       // Exponent in equilibrium constant
+    h_prime(n_atoms),               // Enthalpy for virtual species
+    cp_prime(n_atoms),              // Specific heat for virtual species
+    s_prime(n_atoms),               // Entropy for virtual species
+    rj(5)                            // 
 {
 
-  // Prime number representation of species
-  int tmp_vec[n_species + n_atoms]; // use temporary vector b/c grvy doesn't like
-                                    // Eigen format or std::vector format
-  grvy_input_fopen("./input.txt");
-  grvy_input_fread_int_vec("specieslist", tmp_vec, n_species + n_atoms);
+    // Reactant stoichiometric coefficients for the catchall reactions
+    nukj_r << 1, 0, 0, 0, 0, 
+              0, 1, 0, 0, 0,
+              0, 0, 1, 0, 0, 
+              0, 0, 0, 1, 0, 
+              0, 0, 0, 0, 1, 
+              0, 0, 0, 0, 0, 
+              0, 0, 0, 0, 0;
 
-  // Now copy temporary vector entries into actual vector
-  for (int i = 0; i < n_species + n_atoms; i++)
-  {
-     species_list(i) = tmp_vec[i];
-  }
+    // Product stoichiometric coefficients for the catchall reactions
+    nukj_p << 0, 0, 0, 0, 0, 
+              0, 0, 0, 0, 0, 
+              0, 0, 0, 0, 0, 
+              0, 0, 0, 0, 0, 
+              0, 0, 0, 0, 0, 
+              2, 0, 1, 1, 2, 
+              0, 2, 1, 2, 1;
 
-  // Set up prime number representation of each atom in the system
-  int t_vec[n_atoms]; // use temporary vector b/c grvy doesn't like
-                      // Eigen format or std::vector format
-  grvy_input_fread_int_vec("prime_sieve", t_vec, n_atoms);
+    // Difference between prod. coeffs. and react. coeffs.
+    nukj = nukj_p - nukj_r;
 
-  // Now copy temporary vector entries into actual vector
-  for (int i = 0; i < n_atoms; i++)
-  {
-     prime_atoms(i) = t_vec[i];
-  }
+    // Exponent on pa/RT, gamma = \sum_{k}{nukj}
+    for (int j = 0; j < nukj.cols(); j++)
+    {
+        gamma(j) = nukj.col(j).sum();
+    }
 
-  grvy_input_fclose();
+} // end inadequacy_model constructor
 
-  // Initialize matrix containing prime factors for each atom and species
-  MatrixXd pf = MatrixXd::Zero(n_atoms, n_species + n_atoms);
-  int xtest;
-  int mod;
-  double pexp;
+void inadequacy_model::thermo(int n_atoms, MatrixXd alphas, VectorXd betas, double T)
+{
 
-  // species_list_m is the same as species list EXCEPT
-  // that it only counts each atom in a species once.
-  // So, H20 is represented as 2*2*3 but in
-  // species_list_m it is expressed as 2*3.  We call
-  // this the zero-multiplicity prime factorization.
-  species_list_m.setOnes(n_species+n_atoms);
+    for (unsigned int m = 0; m < n_atoms; m++)
+    {
+        h_prime(m)  = alphas(m,0) + alphas(m,1) * T + alphas(m,2) * T * T;
+        cp_prime(m) =               alphas(m,1)  + 2.0 * alphas(m,2) * T;
+        s_prime(m)  = betas(m) + alphas(m,1) * log(T) + 2.0 * alphas(m,2) * T;
+    }
 
-  for (int k = 0; k < n_species + n_atoms; k++) // Loop over species
-  {
-     xtest = species_list(k); // Get species number
-     for (int i = 0; i < n_atoms; i++) // Loop over atoms
+}
+
+void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double R, 
+                                     const unsigned int n_atoms, const unsigned int n_species, 
+                                     std::vector<double> delta_k)
+{
+
+     Antioch::TempCache<double> temp_cache(T);
+
+     double RT = R * T;
+     double pa = 1.0e+05; // 1 bar in Pa
+     double pa_RT = pa / RT;
+
+     int Mc = 5; // FIXME  Remove hard coding
+     int Nc = n_species;
+     double exp_arg_j;
+
+     // Make up some Arrhenius coeffs. for now
+     VectorXd A(Mc);
+     VectorXd beta(Mc);
+     VectorXd Ea(Mc);
+
+     A    << 1.0e+09, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
+     beta << 0.5, 0.75, 0.5, 0.25, 0.1;
+     Ea   << 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05;
+     
+     double kfj; // forward reaction rate coeff.
+     double kej; // equilibrium constant
+     double kbj; // backward reaction rate coeff.
+     double rfj; // forward progress rate
+     double rbj; // backward progress rate
+
+     VectorXd rj(Mc); // progress rate
+
+     for (int j = 0; j < Mc; j++)
      {
-        mod = 0; // Initialize modulus
-        while (mod == 0) // While modulus is 0
-        {
-           mod = xtest % prime_atoms(i); // Get modulus of species and prime sieve
-           if (mod == 0)
-           {
-              // If mod == 0 then we have a prime factor
-              xtest = xtest/prime_atoms(i);
-              pf(i,k) = pf(i,k) + 1.0; // Increment number of atoms in species
-           } // end if
-        } // end while mod == 0
-        pexp = pf(i,k);
-        if (pexp > 1.0)
-        {
-           pexp = 1.0;
-        }
-        species_list_m(k) *= pow(prime_atoms(i), pexp);
-     } // end loop over atoms
-  } // end loop over species
-
-  // Create the C matrix
-  double sum; // Needed for column summation of pf
-  int gcdij; // Greatest common divisor
-  nnz = 0; // Number of nonzero entries in C
-  // Set up number of atoms in catchalls (obviously 1)
-  for (int i = 0; i < n_atoms; i++)
-  {
-     atoms(i)  = 1.0;
-     iatoms(i) = 1.0;
-  }
-  double intpart;
-  n_eq_nonlin = 0;
-  for (int i = 0; i < n_species + n_atoms; i++)
-  {
-     for (int j = 0; j < n_species; j++)
-     {
-        if (i < n_atoms) // First n_atoms rows of C matrix
-        {
-           // Sum column k of pf to find total number
-           // of atoms in species
-           sum = 0.0;
-           for (int k = 0; k < n_atoms; k++)
-           {
-              sum += pf(k, j + n_atoms);
-           }
-           atoms(j + n_atoms)  = sum;
-           iatoms(j + n_atoms) = 1.0/sum;
-           Cmat(i,j) = -pf(i, j + n_atoms)/sum; // Fraction of atom in species
-           // Check to see if entry is a fraction (only do for first row)
-           // This is to determine number of catchall reactions
-           if (i == 0)
-           {
-              if (modf(Cmat(i,j), &intpart) != 0)
-              {
-                 n_eq_nonlin += 1; // Increment number of catchall equations
-              }
-           }
-        }
-        else if (i == j + n_atoms) // Identity matrix for last rows
-        {
-           Cmat(i,j) = 1.0;
-        }
-        else
-        {
-           Cmat(i,j) = 0.0;
-        }
-        // Now compute the GCD to determine the number of nonzeros
-        gcdij = gcd(species_list_m(j + n_atoms), species_list_m(i));
-        if (gcdij >= species_list_m(j + n_atoms))
-        {
-           nnz += 1;
-        }
-     } // End loop over n_species
-  } // End loop over n_species + n_atoms
-
-  // Create coefficient matrix for catchall reactions
-  coeff_catchall.resize(n_atoms, n_eq_nonlin);
-  for (int i = 0; i < n_atoms; i++)
-  {
-      for (int j = 0; j < n_eq_nonlin; j++)
-      {
-          coeff_catchall(i,j) = pf(i, n_species+n_atoms-n_eq_nonlin+j);
-      }
-  }
-
-  // Get mapping for nonzero entires
-  mapnz.resize(nnz,2);
-  int l = 0;
-  for (int i = 0; i < n_species; i++)
-  {
-     for (int j = 0; j < n_species + n_atoms; j++)
-     {
-        gcdij = gcd(species_list_m(i + n_atoms), species_list_m(j));
-        if (gcdij >= species_list_m(i + n_atoms))
-        {
-           mapnz(l,0) = i;
-           mapnz(l,1) = j;
-           l += 1;
-        }
+         kfj = A(j) * pow(T, beta(j)) * exp(-Ea(j) / RT);
+         exp_arg_j = 0.0;
+         for (int k = 0; k < Nc; k++)
+         {
+             exp_arg_j  += nukj(k,j) * delta_k[k];
+         }
+         kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
+         kbj = kfj / kej;
+         rfj = 1.0;
+         rbj = 1.0;
+         // Calculate reaction rates
+         for (int k = 0; k < Nc; k++)
+         {
+             rfj *= pow(Yinad[k], nukj_r(k,j));
+             rbj *= pow(Yinad[k], nukj_p(k,j));
+         }
+         rj(j) = kfj * rfj - kbj * rbj;
      }
-  }
-
-} // end stochastic_operator constructor
-
-void stochastic_operator::form_operator(VectorXd xi)
-{
-
-   MatrixXd Pmat = MatrixXd::Zero(n_species, n_species + n_atoms);
-
-   // Set nonzero values in P matrix
-   int i;
-   int j;
-   for (int k = 0; k < nnz; k++)
-   {
-      i = mapnz(k,0);
-      j = mapnz(k,1);
-      Pmat(i,j) = xi[k];
-   }
-
-   // Modify some entries in P matrix
-   double sum;
-   double pre;
-   double fact;
-   double tmp;
-   for (int k = 0; k < nnz; k++)
-   {
-      // Get nonzero entries
-      i = mapnz(k,0);
-      j = mapnz(k,1);
-      if (j == i + n_atoms) // Then modify entry
-      {
-         // The next several lines are from Eq. 3.37
-         // in Rebecca's dissertation.
-         fact = 100.0; // some large value bigger than any expected in C
-         for (int n = 0; n < n_atoms; n++)
-         // First compute min(abs(Cij)) over rows of col j
-         // excluding zero entries
-         {
-            if (Cmat(n,i) != 0)
-               {
-                  tmp = std::abs(Cmat(n,i));
-                  if (tmp < fact)
-                     {
-                        fact = tmp;
-                     }
-               }
-         }
-         fact = 1.0 / fact;
-         sum = 0.0;
-         for (int l = 0; l < n_species; l++)
-         {
-            if (l != i)
-            {
-               pre = 0.0;
-               for (int n = 0; n < n_atoms; n++)
-               // Now compute max(abs(Cij)) over rows of col j
-               // excluding zero entries
-               {
-                  if (Cmat(n,l) != 0)
-                  {
-                     tmp = std::abs(Cmat(n,l));
-                     if (tmp > pre)
-                     {
-                        pre = tmp;
-                     }
-                  }
-               }
-               sum += pre * Pmat(l,j);
-            }
-         }
-         // Update the P matrix
-         Pmat(i,j) = -Pmat(i,j) - fact * sum;
-      } // end flag to modify entry
-   } // end loop over nonzero entries
-
-   // Create the stochastic operator matrix
-   
-   Smat = Cmat * Pmat;
-
-   // std::cout << "S matrix = " << std::endl;
-   // std::cout << Smat << std::endl;
 
 }
 

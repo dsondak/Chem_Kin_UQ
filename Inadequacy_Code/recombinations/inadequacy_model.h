@@ -1,34 +1,31 @@
-#ifndef STOCHASTIC_OPERATOR_H
-#define STOCHASTIC_OPERATOR_H
+#ifndef INADEQUACY_MODEL_H
+#define INADEQUACY_MODEL_H
 
 #include <vector>
 #include <Eigen/Dense>
 
 using Eigen::MatrixXd;
-using Eigen::MatrixXi;
 using Eigen::VectorXd;
-using Eigen::VectorXi;
 
-class stochastic_operator
+class inadequacy_model
 {
   public:
-    stochastic_operator (int n_species_from_user, int n_atoms_from_user, int extra_from_user);
-    int n_atoms; // number of atoms in the system
-    int n_species; // number of species
-    int n_extra; // number of extra species (inerts? N2, H2O2)
-    VectorXi species_list; // prime number representation of each species
-    VectorXi species_list_m; // 0-multiplicity prime number repr of each species (probably redundant)
-    VectorXi prime_atoms; // Prime number presentation of each atom in the system
-    MatrixXd Cmat;
-    MatrixXd Pmat;
-    MatrixXd Smat;
-    MatrixXd coeff_catchall;
-    MatrixXi mapnz;
-    VectorXd atoms;
-    VectorXd iatoms;
-    int nnz; // number of nonzeros in C matrix
-    int n_eq_nonlin; // number of catchall reactions
-    void form_operator(VectorXd);
+    inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user);
+    int n_species;     // number of species
+    int n_atoms;       // number of atoms in the system
+    int n_extra;       // number of extra species (inerts? N2, H2O2)
+    MatrixXd nukj_r;   // reactant stoich. coeffs.
+    MatrixXd nukj_p;   // product stoich. coeffs.
+    MatrixXd nukj;     // nukj_p - nukj_r
+    VectorXd gamma;    // exponent in equilibrium constant
+    VectorXd h_prime;  // Enthalpy for virtual species
+    VectorXd cp_prime; // Specific heat for virtual species
+    VectorXd s_prime;  // Entropy for virtual species
+    VectorXd rj;       // Progress rate
+    void thermo(int n_atoms, MatrixXd alphas, VectorXd betas, double T);
+    void progress_rate(std::vector<double> Yinad, double T, double R, 
+                       const unsigned int n_atoms, const unsigned int n_species, 
+                       std::vector<double> delta_k);
 };
 
 #endif

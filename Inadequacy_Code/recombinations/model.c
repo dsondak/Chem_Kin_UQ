@@ -72,92 +72,6 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using Eigen::MatrixXi;
 
-
-Eigen::VectorXd reaction_rate(std::vector<double> Yinad, double temperature, 
-                              std::vector<double> h_prime, std::vector<double> s_prime, 
-                              reaction_info rxn)
-{
-     double R_universal = Antioch::Constants::R_universal<double>();
-     Antioch::TempCache<double> temp_cache(temperature);
-
-     double RT = R_universal * temperature;
-     double pa = 1.0e+05; // 1 bar in Pa
-     double pa_RT = pa / RT;
-
-     int n_atoms = rxn.ProblemInfo.n_atoms;
-
-     MatrixXd nukj_r = rxn.ProblemInfo.nukj_r;
-     MatrixXd nukj_p = rxn.ProblemInfo.nukj_p;
-     MatrixXd nukj   = rxn.ProblemInfo.nukj;
-     VectorXd gamma = rxn.ProblemInfo.gamma;
-
-     int Mc = 5; // FIXME  Remove hard coding
-     int Nc = rxn.ProblemInfo.n_species;
-     double exp_arg_j;
-
-     // Make up some Arrhenius coeffs. for now
-     VectorXd A(Mc);
-     VectorXd beta(Mc);
-     VectorXd Ea(Mc);
-
-     // 5 RXN TESTS 
-     A    << 1.0e+09, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
-     beta << 0.5, 0.75, 0.5, 0.25, 0.1;
-     Ea   << 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05;
-     
-     double kfj; // forward reaction rate coeff.
-     double kej; // equilibrium constant
-     double kbj; // backward reaction rate coeff.
-     double rfj; // forward progress rate
-     double rbj; // backware progress rate
-
-     VectorXd rj(Mc); // progress rate
-
-     // Set up s/R - h_RT for each species
-     std::vector<double> delta_k(Nc, 0.0);
-     // First just do H2 and O2
-     for (int k = 0; k < 2; k++)
-     {   
-         delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
-                      rxn.Thermo->h_over_RT(temp_cache, k);
-     }
-     // Skipped H and O so need to decrement index by 2
-     for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
-     {   
-         delta_k[k - 2] = rxn.Thermo->s_over_R(temp_cache, k) - 
-                      rxn.Thermo->h_over_RT(temp_cache, k);
-     }
-     // Now do catchalls (still need to decrement by 2)
-     for (int k = 0; k < n_atoms; k++)
-     {
-         delta_k[rxn.ProblemInfo.n_species + k - 2] = s_prime[k] / R_universal - h_prime[k] / RT;
-     }
-
-     for (int j = 0; j < Mc; j++)
-     {
-         kfj = A(j) * pow(temperature, beta(j)) * exp(-Ea(j) / RT);
-         exp_arg_j = 0.0;
-         for (int k = 0; k < Nc; k++)
-         {
-             exp_arg_j  += nukj(k,j) * delta_k[k];
-         }
-         kej = pow(pa_RT, gamma(j)) * exp(exp_arg_j);
-         kbj = kfj / kej;
-         rfj = 1.0;
-         rbj = 1.0;
-         // Calculate reaction rates
-         for (int k = 0; k < Nc; k++)
-         {
-             rfj *= pow(Yinad[k], nukj_r(k,j));
-             rbj *= pow(Yinad[k], nukj_p(k,j));
-         }
-         rj(j) = kfj * rfj - kbj * rbj;
-     }
-
-    return rj;
-}
-
-
 /***************************
  *
  * hydrogenFunction
@@ -171,12 +85,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // Get the number of species in the model
   unsigned int n_species = rxn.ProblemInfo.n_species + rxn.ProblemInfo.n_extra;
   unsigned int n_atoms   = rxn.ProblemInfo.n_atoms;
-  int dim = n_species + 1;
-
-  if (rxn.ProblemInfo.include_inad)
-  {
-     dim += n_atoms;
-  }
+  int dim = n_species + n_atoms + 1;
 
   // Solution vector (units are moles)
   std::vector<double> molar_densities(n_species,0);
@@ -220,126 +129,94 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   double Qden = 0.0;
 
   double R_universal = Antioch::Constants::R_universal<double>();
+  double RT = R_universal * temperature;
 
-  if (rxn.ProblemInfo.include_inad)
+  // Create a new vector containing only relevant species
+  // This will not be necessary if the user supplies only 
+  // the participating species
+  std::vector<double> Yinad(rxn.ProblemInfo.n_species, 0.0);
+  // Skip H and O
+  for (int k = 0; k < 2; k++)
   {
-     // Create a new vector containing only relevant species
-     // This will not be necessary if the user supplies only 
-     // the participating species
-      std::vector<double> Yinad(rxn.ProblemInfo.n_species, 0.0);
-      // Skip H and O
-      for (int k = 0; k < 2; k++)
-      {
-          Yinad[k] = Y[k];
-      }
-      // Skipped H and O so decrement index by 2
-      for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
-      {
-          Yinad[k - 2] = Y[k];
-      }
-      // Next copy catchall species to Yinad
-      for (int k = 0; k < n_atoms; k++)
-      {
-          Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
-      }
+      Yinad[k] = Y[k];
+  }
+  // Skipped H and O so decrement index by 2
+  for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+  {
+      Yinad[k - 2] = Y[k];
+  }
+  // Next copy catchall species to Yinad
+  for (int k = 0; k < n_atoms; k++)
+  {
+      Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
+  }
 
-     int Mc = 5; // FIXME  Remove hard-coding.
+  int Mc = 5; // FIXME  Remove hard-coding.
 
-     std::vector<double> h_prime(n_atoms, 0.0);  // Enthalpy for catchalls 
-     std::vector<double> cp_prime(n_atoms, 0.0); // Specific heat (constant cp) for catchalls 
-     std::vector<double> s_prime(n_atoms, 0.0);  // Entropy for catchalls 
+  MatrixXd alphas(n_atoms, 3);
+  alphas << -3.90372558e+04, 13.6559654, 1.20459536e-03, 
+            -3.90372558e+04, 13.6559654, 1.20459536e-03;
 
-     // Coeffs for catchall thermo
-     std::vector<double> alpha_0(n_atoms, 0.0);
-     std::vector<double> beta_0 (n_atoms, 0.0);
-     std::vector<double> alpha_1(n_atoms, 0.0);
-     std::vector<double> alpha_2(n_atoms, 0.0);
+  VectorXd betas(n_atoms);
+  betas << -17.0857829376, -17.0857829376;
 
-      //double sig = 0.10;
+  rxn.inad_model.thermo(n_atoms, alphas, betas, temperature);
 
-      // Mean Values
-      //alpha_0[0] = -3.90372558e+04; //100.5;
-      //alpha_0[1] = -3.90372558e+04; //150.19;
+  int Nc = rxn.ProblemInfo.n_species;
 
-      alpha_0[0] = 100.5;
-      alpha_0[1] = 150.19;
+  // Set up s/R - h_RT for each species
+  std::vector<double> delta_k(Nc, 0.0);
 
-      // \pm 3std Values
-      //alpha_0[0] += 3.0 * sig * alpha_0[0];
-      //alpha_0[1] += 3.0 * sig * alpha_0[1];
+  // First just do H2 and O2
+  for (int k = 0; k < 2; k++)
+  {   
+      delta_k[k] = rxn.Thermo->s_over_R(temp_cache, k) - 
+                   rxn.Thermo->h_over_RT(temp_cache, k);
+  }
+  // Skipped H and O so need to decrement index by 2
+  for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+  {   
+      delta_k[k - 2] = rxn.Thermo->s_over_R(temp_cache, k) - 
+                   rxn.Thermo->h_over_RT(temp_cache, k);
+  }
+  // Now do catchalls (still need to decrement by 2)
+  for (int k = 0; k < n_atoms; k++)
+  {
+      delta_k[rxn.ProblemInfo.n_species + k - 2] = rxn.inad_model.s_prime(k) / R_universal - 
+                                                   rxn.inad_model.h_prime(k) / RT;
+  }
 
-      // Mean Values
-      //beta_0[0] = -17.0857829376; //-0.382;
-      //beta_0[1] = -17.0857829376; // 24.61;
+  Eigen::VectorXd rj(Mc);
+  rxn.inad_model.progress_rate(Yinad, temperature, R_universal, n_atoms, rxn.ProblemInfo.n_species, delta_k);
 
-      beta_0[0] = 0.1;
-      beta_0[1] = 0.2;
+  // Finally, compute the RHS for these species.
+  VectorXd omega_dot_inad;
+  omega_dot_inad = rxn.inad_model.nukj * rxn.inad_model.rj;
 
-      // \pm 3std Values
-      //beta_0[0] += 3.0 * sig * beta_0[0];
-      //beta_0[1] += 3.0 * sig * beta_0[1];
+  // The very last step is to add omega_dot_inad to the 
+  // dYdt and then move on to the energy equation.
+  // First just do H2 and O2
+  for (int k = 0; k < 2; k++)
+  {
+      dYdt[k] += omega_dot_inad(k);
+  }
+  // Skipping H and O so decrement index by 2
+  for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
+  {
+      dYdt[k] += omega_dot_inad(k - 2);
+  }
+  // Now do catchalls
+  for (int k = 0; k < n_atoms; k++)
+  {
+      dYdt[(dim - 1) - n_atoms + k] = omega_dot_inad(rxn.ProblemInfo.n_species + k - 2);
+  }
 
-      // ALPHA_{i1}
-      alpha_1[0] = 13.6559654; //1.0e-05;
-      alpha_1[1] = 13.6559654; //1.0e-05;
-
-      // \pm 3std Values
-      //alpha_1[0] += 3.0 * sig * alpha_1[0];
-      //alpha_1[1] += 3.0 * sig * alpha_1[1];
-
-      // ALPHA_{i2}
-      alpha_2[0] = 1.20459536e-03; //1.00e-03;
-      alpha_2[1] = 1.20459536e-03; //6.82e-03;
-
-      // \pm 3std Values
-      //alpha_2[0] += 3.0 * sig * alpha_2[0];
-      //alpha_2[1] += 3.0 * sig * alpha_2[1];
-
-     for (int m = 0; m < n_atoms; m++)
-     {
-         h_prime[m]  = alpha_0[m] + 
-                       alpha_1[m] * temperature + 
-                       alpha_2[m] * temperature * temperature;
-         cp_prime[m] = alpha_1[m] + 2.0 * alpha_2[m] * temperature;
-         s_prime[m]  = beta_0[m]  + 
-                       alpha_1[m] * log(temperature) + 
-                       2.0 * alpha_2[m] * temperature;
-     }
-
-     Eigen::VectorXd rj(Mc);
-     rj = reaction_rate(Yinad, temperature, h_prime, s_prime, rxn);
-
-     // Finally, compute the RHS for these species.
-     VectorXd omega_dot_inad;
-     MatrixXd nukj   = rxn.ProblemInfo.nukj;
-     omega_dot_inad = nukj * rj;
-
-     // The very last step is to add omega_dot_inad to the 
-     // dYdt and then move on to the energy equation.
-     // First just do H2 and O2
-     for (int k = 0; k < 2; k++)
-     {
-         dYdt[k] += omega_dot_inad(k);
-     }
-     // Skipping H and O so decrement index by 2
-     for (int k = 4; k < rxn.ProblemInfo.n_species; k++)
-     {
-         dYdt[k] += omega_dot_inad(k - 2);
-     }
-     // Now do catchalls
-     for (int k = 0; k < n_atoms; k++)
-     {
-         dYdt[(dim - 1) - n_atoms + k] = omega_dot_inad(rxn.ProblemInfo.n_species + k - 2);
-     }
-
-     // Get catchall contribution to energy equation
-     for (unsigned int k = 0; k < n_atoms; k++)
-     {
-         Qnum += h_prime[k] * dYdt[(dim - 1) - n_atoms + k];
-         Qden += cp_prime[k] * Y[(dim - 1) - n_atoms + k];
-     }
-  } // End inadequacy flag
-
+  // Get catchall contribution to energy equation
+  for (unsigned int k = 0; k < n_atoms; k++)
+  {
+      Qnum += rxn.inad_model.h_prime(k) * dYdt[(dim - 1) - n_atoms + k];
+      Qden += rxn.inad_model.cp_prime(k) * Y[(dim - 1) - n_atoms + k];
+  }
 
   // Energy equation computations
   std::vector<double> h(n_species, 0.);  // Enthalpy for each species

@@ -3,14 +3,13 @@
  ***   reaction_info.c   ***
  *
  * Structure containing all reaction info, problem_size class and
- * stochastic_operator class.
+ * inadequacy_model class.
  *
  * INPUTS:
  *        chem_mixture:  Chemical mixture from Antioch
  *        reaction_set:  Reaction set from Antioch
  *        thermo      :  Thermodynamics data from Antioch
  *        kinetics    :  Reaction kinetics from Antioch
- *        scales      :  Scaling for the calibration parameters
  *        species     :  Number of species in model
  *        atoms       :  Number of atoms in model
  *        extra       :  Additional species
@@ -26,7 +25,7 @@
  *
  *-----------------------------------------------------------------*/
 #include "reaction_info.h"
-#include "stochastic_operator.h"
+#include "inadequacy_model.h"
 #include "problem_size.h"
 
 //Constructor
@@ -35,7 +34,6 @@ reaction_info::reaction_info(
     Antioch::ReactionSet<double> * reaction_set, 
     Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * thermo,
     Antioch::KineticsEvaluator<double> * kinetics,
-    std::vector<double> & scales,
     int species_from_user,
     int atoms_from_user,
     int extra_from_user,
@@ -57,7 +55,6 @@ reaction_info::reaction_info(
   Reaction_set(reaction_set),
   Thermo(thermo),
   Kinetics(kinetics),
-  Scales(scales),
   n_species(species_from_user),
   n_atoms(atoms_from_user),
   n_extra(extra_from_user),
@@ -75,8 +72,12 @@ reaction_info::reaction_info(
   time_ig(user_time_ig),
   Tig(user_Tig),
   model_params(),
-  S(n_species, n_atoms, n_extra),
-  ProblemInfo(n_phis, n_scenario, n_times, n_reactions, oxidizer_i, nitrogen, fuel, heat_rates, init_temperatures, heating_rate, TO, time_ig, Tig)
+  inad_model(n_species, n_atoms, n_extra),
+  ProblemInfo(n_species, n_atoms, n_extra, 
+              n_phis, n_scenario, n_times, 
+              n_reactions, oxidizer_i, nitrogen, 
+              fuel, heat_rates, init_temperatures, 
+              heating_rate, TO, time_ig, Tig)
 {
 }
 

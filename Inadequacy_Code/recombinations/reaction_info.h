@@ -2,7 +2,7 @@
 #define REACTION_INFO_H
 
 // User functions
-#include "stochastic_operator.h"
+#include "inadequacy_model.h"
 #include "problem_size.h"
 //c++
 #include <vector>
@@ -20,7 +20,6 @@ struct reaction_info {
       Antioch::ReactionSet<double> * reaction_set, 
       Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * thermo,
       Antioch::KineticsEvaluator<double> * kinetics,
-      std::vector<double> & scales,
       int species_from_user,
       int atoms_from_user,
       int extra_from_user,
@@ -43,7 +42,6 @@ struct reaction_info {
   Antioch::ReactionSet<double> * Reaction_set;
   Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * Thermo;
   Antioch::KineticsEvaluator<double> * Kinetics;
-  std::vector<double> & Scales;
   int n_species;
   int n_atoms;
   int n_extra;
@@ -61,7 +59,7 @@ struct reaction_info {
   double time_ig;
   double Tig;
   std::vector<double> model_params;
-  stochastic_operator S;
+  inadequacy_model inad_model;
   problem_size ProblemInfo;
 };
 #endif

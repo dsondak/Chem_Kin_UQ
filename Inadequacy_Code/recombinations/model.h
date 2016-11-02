@@ -8,9 +8,7 @@ void
 hydrogenComputeModel(
   std::vector<double>& initialValues,
   std::vector<double>& timePoints,
-  // double * timePoints,
   reaction_info *      rxn,
-  // reaction_info *      p_rxn5,
   std::vector<double>& returnValues);
 
 #endif
