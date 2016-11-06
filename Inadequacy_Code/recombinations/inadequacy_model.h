@@ -14,6 +14,7 @@ class inadequacy_model
     int n_species;     // number of species
     int n_atoms;       // number of atoms in the system
     int n_extra;       // number of extra species (inerts? N2, H2O2)
+    int n_species_inad; // number of inadequacy species
     MatrixXd nukj_r;   // reactant stoich. coeffs.
     MatrixXd nukj_p;   // product stoich. coeffs.
     MatrixXd nukj;     // nukj_p - nukj_r
@@ -22,9 +23,11 @@ class inadequacy_model
     VectorXd cp_prime; // Specific heat for virtual species
     VectorXd s_prime;  // Entropy for virtual species
     VectorXd rj;       // Progress rate
-    void thermo(int n_atoms, MatrixXd alphas, VectorXd betas, double T);
+    void thermo(MatrixXd alphas, VectorXd betas, double T);
+    //void progress_rate(std::vector<double> Yinad, double T, double R, 
+    //                   const unsigned int n_atoms, const unsigned int n_species, 
+    //                   std::vector<double> delta_k);
     void progress_rate(std::vector<double> Yinad, double T, double R, 
-                       const unsigned int n_atoms, const unsigned int n_species, 
                        std::vector<double> delta_k);
 };
 

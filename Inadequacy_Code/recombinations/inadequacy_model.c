@@ -40,9 +40,10 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
     n_species(n_species_from_user), // set n_species = n_species_from_user
     n_atoms(n_atoms_from_user),     // number of atoms in the system
     n_extra(extra_from_user),       // number of inert species
-    nukj_r(n_species, 5),           // Reactant stoichiometric coeffs
-    nukj_p(n_species, 5),           // Product stoichiometric coeffs
-    nukj(n_species, 5),             // Total coeffs.
+    n_species_inad(n_species + n_extra - 3 + n_atoms), // number of inadequacy species
+    nukj_r(n_species_inad, 5),           // Reactant stoichiometric coeffs
+    nukj_p(n_species_inad, 5),           // Product stoichiometric coeffs
+    nukj(n_species_inad, 5),             // Total coeffs.
     gamma(5),                       // Exponent in equilibrium constant
     h_prime(n_atoms),               // Enthalpy for virtual species
     cp_prime(n_atoms),              // Specific heat for virtual species
@@ -79,7 +80,7 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
 
 } // end inadequacy_model constructor
 
-void inadequacy_model::thermo(int n_atoms, MatrixXd alphas, VectorXd betas, double T)
+void inadequacy_model::thermo(MatrixXd alphas, VectorXd betas, double T)
 {
 
     for (unsigned int m = 0; m < n_atoms; m++)
@@ -92,7 +93,6 @@ void inadequacy_model::thermo(int n_atoms, MatrixXd alphas, VectorXd betas, doub
 }
 
 void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double R, 
-                                     const unsigned int n_atoms, const unsigned int n_species, 
                                      std::vector<double> delta_k)
 {
 
@@ -103,7 +103,6 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      double pa_RT = pa / RT;
 
      int Mc = 5; // FIXME  Remove hard coding
-     int Nc = n_species;
      double exp_arg_j;
 
      // Make up some Arrhenius coeffs. for now
@@ -121,13 +120,11 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      double rfj; // forward progress rate
      double rbj; // backward progress rate
 
-     VectorXd rj(Mc); // progress rate
-
      for (int j = 0; j < Mc; j++)
      {
          kfj = A(j) * pow(T, beta(j)) * exp(-Ea(j) / RT);
          exp_arg_j = 0.0;
-         for (int k = 0; k < Nc; k++)
+         for (int k = 0; k < n_species_inad; k++)
          {
              exp_arg_j  += nukj(k,j) * delta_k[k];
          }
@@ -136,7 +133,7 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
          rfj = 1.0;
          rbj = 1.0;
          // Calculate reaction rates
-         for (int k = 0; k < Nc; k++)
+         for (int k = 0; k < n_species_inad; k++)
          {
              rfj *= pow(Yinad[k], nukj_r(k,j));
              rbj *= pow(Yinad[k], nukj_p(k,j));
