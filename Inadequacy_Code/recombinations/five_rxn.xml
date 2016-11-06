@@ -43,16 +43,26 @@
       <products>H2O:1 H:1</products>
     </reaction>
 
-    <reaction reversible="yes" type="ThreeBody" id="reaction10">
+    <reaction reversible="yes" type="TroeFalloffThreeBody" id="reaction10">
       <equation>H + O2 + M [=] HO2 + M</equation>
       <rateCoeff>
-        <Kooij>
-          <A units="cm6/mol2/s">5.75e+19</A>
-          <b>-1.4</b>
-          <E units="kJ/mol">1.0e-16</E>
+        <Kooij name="k0">
+           <A units="cm6/mol2/s">6.366e+20</A>
+           <b>-1.72</b>
+           <E units="kJ/mol">2.1957632</E>
         </Kooij>
-        <efficiencies default="1.0">H2:2.5 H2O:12.0 CO:1.9 CO2:2.4 Ar:0.7
-          He:0.7</efficiencies>
+        <Kooij>
+           <A units="cm3/mol/s">1.475e+12</A>
+           <b>0.60</b>
+           <E units="kJ/mol">0.0</E>
+        </Kooij>
+        <Troe>
+          <alpha> 0.5 </alpha>
+          <T1>1.0e+30</T1>
+          <T2>1.0e+30</T2>
+          <T3>1.0e-30</T3>
+        </Troe>
+        <efficiencies default="1.0">H2:2.5 H2O:16.0 CO:1.2 CO2:2.4 Ar:0.7 He:0.7</efficiencies>
       </rateCoeff>
       <reactants>H:1 O2:1</reactants>
       <products>HO2:1</products>
@@ -61,11 +71,10 @@
     <reaction reversible="yes" type="Elementary" id="reaction12b">
       <equation>H2 + O2 [=] HO2 + H</equation>
       <rateCoeff>
-        <Kooij>
+        <Arrhenius>
           <A units="cm3/mol/s">1.4e+14</A>
-          <b>1.0e-16</b>
           <E units="kJ/mol">249.5</E>
-        </Kooij>
+        </Arrhenius>
       </rateCoeff>
       <reactants>H2:1 O2:1</reactants>
       <products>HO2:1 H:1</products>
