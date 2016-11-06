@@ -1,5 +1,5 @@
 QUESO_DIR := /h1/dsondak/bin/queso
-ANTIOCH_DIR := /h1/dsondak/bin/antioch
+ANTIOCH_DIR := /workspace/dsondak/antioch_build
 
 INC_PATHS := \
 	-I. \
@@ -22,7 +22,7 @@ LIBS := \
 	-L$(MPI_DIR)/lib \
 	-L$(HDF5_DIR)/lib -lhdf5 
 
-CXX = mpic++#check this, need g++?
+CXX = mpic++
 CXXFLAGS += -O3 -g -Wall -c -std=c++0x
 
 default: ip-catchall
@@ -36,18 +36,16 @@ clean:
 	rm -f *.o
 	rm -f ip-catchall
 
-ip-catchall: ip_catchall.o compute.o problem_size.o likelihood.o reaction_info.o  model.o stochastic_operator.o truth_data.o chemistryVectorRV.o chemistryJointPdf.o chemistryVectorRealizer.o
+ip-catchall: ip_catchall.o compute.o problem_size.o likelihood.o reaction_info.o  model.o inadequacy_model.o write_data.o truth_data.o
 	$(CXX) ip_catchall.o \
 	       compute.o \
                problem_size.o \
 	       likelihood.o \
                reaction_info.o \
                model.o \
-               stochastic_operator.o \
+               inadequacy_model.o \
+               write_data.o \
                truth_data.o \
-               chemistryVectorRV.o \
-               chemistryJointPdf.o \
-               chemistryVectorRealizer.o \
 	       -o ip-catchall $(LIBS)
 
 %.o: %.c
