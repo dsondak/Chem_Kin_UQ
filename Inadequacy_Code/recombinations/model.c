@@ -83,13 +83,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   reaction_info rxn = *(reaction_info *) params;
 
   // Get the number of species in the model
-  unsigned int n_species = rxn.ProblemInfo.n_species + rxn.ProblemInfo.n_extra;
+  unsigned int n_species_total = rxn.ProblemInfo.n_species + rxn.ProblemInfo.n_extra;
   unsigned int n_atoms   = rxn.ProblemInfo.n_atoms;
-  int dim = n_species + n_atoms + 1;
+  int dim = n_species_total + n_atoms + 1;
 
   // Solution vector (units are moles)
-  std::vector<double> molar_densities(n_species,0);
-  for (unsigned int i = 0; i < n_species; i++)
+  std::vector<double> molar_densities(n_species_total, 0.0);
+  for (unsigned int i = 0; i < n_species_total; i++)
   { // Populate molar_densities vector
       molar_densities[i] = Y[i];
       if(molar_densities[i] <= 0)
@@ -103,7 +103,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   Antioch::TempCache<double> temp_cache(temperature);
 
   // Get some thermodynamic data for each species
-  std::vector<double> h_RT_minus_s_R(n_species);
+  std::vector<double> h_RT_minus_s_R(n_species_total);
   rxn.Thermo->h_RT_minus_s_R(temp_cache, h_RT_minus_s_R);
 
   // Perform kinetics calculations 
@@ -111,7 +111,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   // (Note that temperature is passed in but the RHS for the
   //  temperature equation is NOT computed by Antioch.  Just
   //  need temperature in reaction rate calculations.)
-  std::vector<double> mole_sources(n_species,0.0);
+  std::vector<double> mole_sources(n_species_total, 0.0);
   rxn.Kinetics->compute_mole_sources(
       temperature,     // temperature needed for calculations
       molar_densities, // current concentrations (in moles)
@@ -119,7 +119,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       mole_sources);   // RHS
 
   // Set up RHS of each ODE for the species
-  for (unsigned int i = 0; i < n_species; i++)
+  for (unsigned int i = 0; i < n_species_total; i++)
   { // Loop over species
       dYdt[i] = mole_sources[i];
   }
@@ -131,10 +131,13 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   double R_universal = Antioch::Constants::R_universal<double>();
   double RT = R_universal * temperature;
 
+  // Get number of species in inad. model.  Here it's just 
+  // the usual species minus N2, H and O plus H' and O'
+  const unsigned int n_species_inad = n_species_total  - 3 + n_atoms;
+
   // Create a new vector containing only relevant species
-  // This will not be necessary if the user supplies only 
-  // the participating species
-  std::vector<double> Yinad(rxn.ProblemInfo.n_species, 0.0);
+  std::vector<double> Yinad(n_species_inad, 0.0);
+
   // Skip H and O
   for (int k = 0; k < 2; k++)
   {
@@ -160,12 +163,11 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   VectorXd betas(n_atoms);
   betas << -17.0857829376, -17.0857829376;
 
-  rxn.inad_model.thermo(n_atoms, alphas, betas, temperature);
-
-  int Nc = rxn.ProblemInfo.n_species;
+  rxn.inad_model.thermo(alphas, betas, temperature);
+  //rxn.inad_model.thermo(n_atoms, alphas, betas, temperature);
 
   // Set up s/R - h_RT for each species
-  std::vector<double> delta_k(Nc, 0.0);
+  std::vector<double> delta_k(n_species_inad, 0.0);
 
   // First just do H2 and O2
   for (int k = 0; k < 2; k++)
@@ -186,8 +188,7 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
                                                    rxn.inad_model.h_prime(k) / RT;
   }
 
-  Eigen::VectorXd rj(Mc);
-  rxn.inad_model.progress_rate(Yinad, temperature, R_universal, n_atoms, rxn.ProblemInfo.n_species, delta_k);
+  rxn.inad_model.progress_rate(Yinad, temperature, R_universal, delta_k);
 
   // Finally, compute the RHS for these species.
   VectorXd omega_dot_inad;
@@ -219,20 +220,20 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   }
 
   // Energy equation computations
-  std::vector<double> h(n_species, 0.);  // Enthalpy for each species
-  std::vector<double> cp(n_species, 0.); // Specific pressure for each species
+  double enthalpy; // Enthalpy
+  double specific_heat_p;  // cp
 
-  for (unsigned int s = 0; s < n_species; s++)
+  for (unsigned int s = 0; s < n_species_total; s++)
   { // Get numerator and denominator in energy equation (sum of species)
       // Get enthalpy and convert to molar from mass basis
       // Note that R_universal/Rs = Ws where Ws is the molecular weight of species s
-      h[s] = rxn.Thermo->h(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
+      enthalpy = rxn.Thermo->h(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
       // get cp and convert from mass to molar
-      cp[s] = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
+      specific_heat_p = rxn.Thermo->cp(temp_cache,s) * R_universal / rxn.Chem_mixture->R(s);
       // Numerator in energy equation: h_s * dx_s/dt
-      Qnum  += h[s] * mole_sources[s];
+      Qnum  += enthalpy * mole_sources[s];
       // Denominator in energy equation: cp_s * x_s
-      Qden += cp[s] * molar_densities[s];
+      Qden += specific_heat_p * molar_densities[s];
   }
 
   if (Qden <= 0)
@@ -341,6 +342,8 @@ void hydrogenComputeModel(
   // Specifies the second point arbitrarily
   // to enforce non-negativity.
 
+  int n_samp = rxn->ProblemInfo.n_times;
+/*
   double scale;
   double shift;
   double delta_tig = rxn->ProblemInfo.time_ig - time_ig;
@@ -363,6 +366,7 @@ void hydrogenComputeModel(
          exit(0);
       }
   }
+*/
 
   // Reinitialize solution field
   for (int i = 0; i < dim; i++)
@@ -376,7 +380,8 @@ void hydrogenComputeModel(
   // Time integration
   for (unsigned int i = 0; i < n_samp; i++)
   { // Integration loop
-      finalTime = timePoints_shift[i];
+      //finalTime = timePoints_shift[i];
+      finalTime = timePoints[i];
       // Call GSL ODE integrator 
       // t is the current time
       // finalTime is the integration time
@@ -387,6 +392,7 @@ void hydrogenComputeModel(
          std::cout << "GSL wants to take dt < dt_min." << std::endl;
          throw status;
       }
+      std::cout << "Time = " << t << std::endl;
 
       // Store results in return field
       for (unsigned int j = 0; j < dim; j++)
@@ -396,7 +402,8 @@ void hydrogenComputeModel(
 
   } // end loop over time points
   // Don't forget to store the ignition temperature!
-  returnValues[dim * n_samp] = Tig;
+  returnValues[dim * n_samp] = time_ig;
+  returnValues[dim * n_samp + 1] = Tig;
 
   // deallocate memory   
   gsl_odeiv2_driver_free( d );
