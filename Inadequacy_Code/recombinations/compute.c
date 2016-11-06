@@ -24,7 +24,9 @@
 #include "compute.h"
 #include "likelihood.h"
 #include "reaction_info.h"
-#include "chemistryVectorRV.h"
+#include "model.h"
+#include "write_data.h"
+//#include "chemistryVectorRV.h"
 //antioch
 #include <antioch/vector_utils.h>
 #include <antioch/antioch_asserts.h>
@@ -118,6 +120,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   double heating_rate;     // Heating rate
   char *thermo_filename;   // Thermodynamics input file
   char *reaction_filename; // Reaction input file
+  char *data_filename;     // Filename to write data to
   double time_ig;          // Ignition time from detailed model
   double Tig;              // Ignition temperature from detailed model
 
@@ -144,6 +147,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   grvy_input_fread_char("thermo", &thermo_filename);
   grvy_input_fread_char("reactionset", &reaction_filename);
   grvy_input_fread_double("time_ig", &time_ig);
+  grvy_input_fread_char("dataset", &data_filename);
   grvy_input_fread_double("Tig", &Tig);
 
   // Close input parameters file
@@ -200,6 +204,8 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
 
   // Total number of variables (species + temperature)
   const int dim = n_species + n_atoms + n_extra + 1; // + 1 for T
+
+  create_file(data_filename, n_times, dim, n_phis*n_scenario);
 
   /*===================================
   ***
@@ -268,6 +274,27 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
                                 Np * rxnMain.ProblemInfo.n_atoms * order + 
                                 Np * rxnMain.ProblemInfo.n_atoms;
 
+  std::vector<double> initial_conditions(dim, 0.0);
+
+  initial_conditions[0] = 1.0 * rxnMain.ProblemInfo.fuel;
+  initial_conditions[1] = rxnMain.ProblemInfo.oxidizer_i;
+  initial_conditions[7] = rxnMain.ProblemInfo.nitrogen;
+  initial_conditions[dim-1] = rxnMain.ProblemInfo.TO;
+
+  std::vector<double> sample_points(n_times, 0.0);
+  for (int n = 0; n < n_times; n++)
+  {
+      sample_points[n] = n * timePoint + 1.0e-06;
+  }
+
+  std::vector<double> returnValues(n_times * dim + 2, 0.0); // Added two for ignition data
+
+  hydrogenComputeModel(initial_conditions,sample_points,&rxnMain,returnValues);
+
+  int scen = 0;
+  write_file(sample_points, returnValues, data_filename, n_times, dim, scen, 1.0, heating_rate);
+
+/**** CHECKING INADEQUACY CLASS. ****
   MatrixXd alphas(n_atoms, order+1);
   alphas << -3.90372558e+04, 13.6559654, 1.20459536e-03, 
             -3.90372558e+04, 13.6559654, 1.20459536e-03;
@@ -275,14 +302,48 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   VectorXd betas(n_atoms);
   betas << -17.0857829376, -17.0857829376;
 
-  double temperature = 500.0;
+  double temperature = 2000.0;
   
-  rxnMain.inad_model.thermo(rxnMain.ProblemInfo.n_atoms, alphas, betas, temperature);
+  rxnMain.inad_model.thermo(alphas, betas, temperature);
 
-  for (int m = 0; m < n_atoms; m++)
-  {
-      std::cout << "cp_" << m << " = " << rxnMain.inad_model.cp_prime(m) << std::endl;
+  std::vector<double> Yinad(rxnMain.ProblemInfo.n_species, 0.0);
+
+  Yinad[0] = 2.0;
+  Yinad[1] = 1.0;
+
+  double R_universal = Antioch::Constants::R_universal<double>();
+  double RT = R_universal * temperature;
+
+  int Nc = rxnMain.ProblemInfo.n_species;
+
+  Antioch::TempCache<double> temp_cache(temperature);
+
+  // Set up s/R - h_RT for each species
+  std::vector<double> delta_k(Nc, 0.0);
+
+  // First just do H2 and O2
+  for (int k = 0; k < 2; k++)
+  {   
+      delta_k[k] = rxnMain.Thermo->s_over_R(temp_cache, k) - 
+                   rxnMain.Thermo->h_over_RT(temp_cache, k);
   }
+  // Skipped H and O so need to decrement index by 2
+  for (int k = 4; k < rxnMain.ProblemInfo.n_species; k++)
+  {   
+      delta_k[k - 2] = rxnMain.Thermo->s_over_R(temp_cache, k) - 
+                   rxnMain.Thermo->h_over_RT(temp_cache, k);
+  }
+  // Now do catchalls (still need to decrement by 2)
+  for (int k = 0; k < n_atoms; k++)
+  {
+      delta_k[rxnMain.ProblemInfo.n_species + k - 2] = rxnMain.inad_model.s_prime(k) / R_universal - 
+                                                   rxnMain.inad_model.h_prime(k) / RT;
+  }
+
+  rxnMain.inad_model.progress_rate(Yinad, temperature, R_universal, delta_k);
+
+  std::cout << rxnMain.inad_model.rj << std::endl;
+*/
 
   return;
 }
