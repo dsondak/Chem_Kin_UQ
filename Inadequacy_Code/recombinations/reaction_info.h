@@ -23,10 +23,12 @@ struct reaction_info {
       int species_from_user,
       int atoms_from_user,
       int extra_from_user,
+      int species_inad_from_user,
       int user_n_phis,
       int user_n_scenario,
       int user_n_times,
       int user_n_reactions,
+      int reactions_inad_from_user,
       double user_oxidizer,
       double user_nitrogen,
       double user_fuel,
@@ -45,10 +47,12 @@ struct reaction_info {
   int n_species;
   int n_atoms;
   int n_extra;
+  int n_species_inad;
   int n_phis;
   int n_scenario;
   int n_times;
   int n_reactions;
+  int n_reactions_inad;
   double oxidizer_i;
   double nitrogen;
   double fuel;

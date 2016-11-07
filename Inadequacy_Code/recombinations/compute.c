@@ -105,12 +105,14 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   int n_species;           // Number of species (not including extras for N2 and H2O2)
   int n_atoms;             // Number of atoms
   int n_extra;             // Extra for N2 and H2O2
+  int n_species_inad;      // Number of species used in inadequacy model
   int n_phis;              // Equivalence ratios to run
   int n_heating;           // Different heating rates to run
   int n_T;                 // Different starting temperatures to run
   double timePoint;        // Time-step size
   int n_times;             // Number of time-steps to run
   int n_reactions;         // Number of reactions in mechanism
+  int n_reactions_inad;    // Number of reactions in inadequacy model
   double fuel;             // Stoichiometric factor for fuel (H2 here)
   double oxidizer_i;       // Initial concentration of oxidizer
   double nitrogen;         // Concentration of nitrogen
@@ -131,6 +133,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   grvy_input_fread_int("n_species", &n_species);
   grvy_input_fread_int("n_atoms", &n_atoms);
   grvy_input_fread_int("n_extra", &n_extra);
+  grvy_input_fread_int("n_species_inad", &n_species_inad);
   grvy_input_fread_int("n_phis", &n_phis);
   grvy_input_fread_int("n_heating", &n_heating);
   grvy_input_fread_int("n_T", &n_T);
@@ -141,6 +144,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   grvy_input_fread_double("time_points", &timePoint);
   grvy_input_fread_int("num_times", &n_times);
   grvy_input_fread_int("num_reactions", &n_reactions);
+  grvy_input_fread_int("n_reactions_inad", &n_reactions_inad);
   grvy_input_fread_double("fuel", &fuel);
   grvy_input_fread_double("oxidizer_i", &oxidizer_i);
   grvy_input_fread_double("nitrogen", &nitrogen);
@@ -251,10 +255,12 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
       n_species,
       n_atoms,
       n_extra,
+      n_species_inad,
       n_phis,
       n_scenario,
       n_times,
       n_reactions,
+      n_reactions_inad,
       oxidizer_i,
       nitrogen,
       fuel,

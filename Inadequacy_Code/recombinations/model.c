@@ -154,8 +154,6 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
   }
 
-  int Mc = 5; // FIXME  Remove hard-coding.
-
   MatrixXd alphas(n_atoms, 3);
   alphas << -3.90372558e+04, 13.6559654, 1.20459536e-03, 
             -3.90372558e+04, 13.6559654, 1.20459536e-03;
@@ -164,7 +162,6 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   betas << -17.0857829376, -17.0857829376;
 
   rxn.inad_model.thermo(alphas, betas, temperature);
-  //rxn.inad_model.thermo(n_atoms, alphas, betas, temperature);
 
   // Set up s/R - h_RT for each species
   std::vector<double> delta_k(n_species_inad, 0.0);
@@ -342,8 +339,6 @@ void hydrogenComputeModel(
   // Specifies the second point arbitrarily
   // to enforce non-negativity.
 
-  int n_samp = rxn->ProblemInfo.n_times;
-/*
   double scale;
   double shift;
   double delta_tig = rxn->ProblemInfo.time_ig - time_ig;
@@ -366,7 +361,6 @@ void hydrogenComputeModel(
          exit(0);
       }
   }
-*/
 
   // Reinitialize solution field
   for (int i = 0; i < dim; i++)
@@ -392,7 +386,7 @@ void hydrogenComputeModel(
          std::cout << "GSL wants to take dt < dt_min." << std::endl;
          throw status;
       }
-      std::cout << "Time = " << t << std::endl;
+      //std::cout << "Time = " << t << std::endl;
 
       // Store results in return field
       for (unsigned int j = 0; j < dim; j++)
@@ -402,8 +396,7 @@ void hydrogenComputeModel(
 
   } // end loop over time points
   // Don't forget to store the ignition temperature!
-  returnValues[dim * n_samp] = time_ig;
-  returnValues[dim * n_samp + 1] = Tig;
+  returnValues[dim * n_samp] = Tig;
 
   // deallocate memory   
   gsl_odeiv2_driver_free( d );

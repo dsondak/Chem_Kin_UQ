@@ -35,20 +35,21 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user)
+inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user, int n_species_inad_from_user, int n_reactions_inad_from_user)
 :
-    n_species(n_species_from_user), // set n_species = n_species_from_user
-    n_atoms(n_atoms_from_user),     // number of atoms in the system
-    n_extra(extra_from_user),       // number of inert species
-    n_species_inad(n_species + n_extra - 3 + n_atoms), // number of inadequacy species
-    nukj_r(n_species_inad, 5),           // Reactant stoichiometric coeffs
-    nukj_p(n_species_inad, 5),           // Product stoichiometric coeffs
-    nukj(n_species_inad, 5),             // Total coeffs.
-    gamma(5),                       // Exponent in equilibrium constant
-    h_prime(n_atoms),               // Enthalpy for virtual species
-    cp_prime(n_atoms),              // Specific heat for virtual species
-    s_prime(n_atoms),               // Entropy for virtual species
-    rj(5)                            // 
+    n_species(n_species_from_user),               // set n_species = n_species_from_user
+    n_atoms(n_atoms_from_user),                   // number of atoms in the system
+    n_extra(extra_from_user),                     // number of inert species
+    n_species_inad(n_species_inad_from_user),     // number of inadequacy species
+    n_reactions_inad(n_reactions_inad_from_user), // number of inadequacy reactions
+    nukj_r(n_species_inad, n_reactions_inad),     // Reactant stoichiometric coeffs
+    nukj_p(n_species_inad, n_reactions_inad),     // Product stoichiometric coeffs
+    nukj(n_species_inad, n_reactions_inad),       // Total coeffs.
+    gamma(n_reactions_inad),                      // Exponent in equilibrium constant
+    h_prime(n_atoms),                             // Enthalpy for virtual species
+    cp_prime(n_atoms),                            // Specific heat for virtual species
+    s_prime(n_atoms),                             // Entropy for virtual species
+    rj(n_reactions_inad)                          // Progress rate for inadequacy model
 {
 
     // Reactant stoichiometric coefficients for the catchall reactions
@@ -101,14 +102,12 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      double RT = R * T;
      double pa = 1.0e+05; // 1 bar in Pa
      double pa_RT = pa / RT;
-
-     int Mc = 5; // FIXME  Remove hard coding
      double exp_arg_j;
 
      // Make up some Arrhenius coeffs. for now
-     VectorXd A(Mc);
-     VectorXd beta(Mc);
-     VectorXd Ea(Mc);
+     VectorXd A(n_reactions_inad);
+     VectorXd beta(n_reactions_inad);
+     VectorXd Ea(n_reactions_inad);
 
      A    << 1.0e+09, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
      beta << 0.5, 0.75, 0.5, 0.25, 0.1;
@@ -120,7 +119,7 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      double rfj; // forward progress rate
      double rbj; // backward progress rate
 
-     for (int j = 0; j < Mc; j++)
+     for (int j = 0; j < n_reactions_inad; j++)
      {
          kfj = A(j) * pow(T, beta(j)) * exp(-Ea(j) / RT);
          exp_arg_j = 0.0;

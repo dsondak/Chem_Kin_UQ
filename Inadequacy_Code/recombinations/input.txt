@@ -16,7 +16,8 @@
 
 n_species     = 7     	    	 # Number of species
 n_atoms       = 2		 # Number of atoms
-n_extra       = 1                # For inert? atoms (N2 and H2O2 for now)
+n_extra       = 1                # For inert species (e.g. N2)
+n_species_inad= 7                # Number of inadequacy species
 n_phis        = 1                # Number of phi ICs
 n_T           = 1                # Number of initial temperatures
 n_heating     = 1                # Number of heating rates
@@ -27,6 +28,7 @@ heating_rate  = 5.0e+06          # Heating rate
 time_points   = 1.0e-06          # Sample every time_points
 num_times     = 50000            # Take this many samples
 num_reactions = 5                # Number of reactions in reduced model
+n_reactions_inad = 5             # Number of reactions in inadequacy model
 fuel          = 2.0              # Initial fuel concentration (H2 here)
 oxidizer_i    = 1.0              # Initial oxidizer concentration (O2 here)
 nitrogen      = 3.78             # Initial N2 concentration
