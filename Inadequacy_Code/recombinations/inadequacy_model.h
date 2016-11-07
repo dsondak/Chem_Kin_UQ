@@ -21,11 +21,14 @@ class inadequacy_model
     MatrixXd nukj_p;   // product stoich. coeffs.
     MatrixXd nukj;     // nukj_p - nukj_r
     VectorXd gamma;    // exponent in equilibrium constant
+    MatrixXd alphas;   // Enthalpy coefficients for virtual species
+    VectorXd betas;    // Entropy coefficients for virtual species
     VectorXd h_prime;  // Enthalpy for virtual species
     VectorXd cp_prime; // Specific heat for virtual species
     VectorXd s_prime;  // Entropy for virtual species
     VectorXd rj;       // Progress rate
-    void thermo(MatrixXd alphas, VectorXd betas, double T);
+    //void thermo(MatrixXd alphas, VectorXd betas, double T);
+    void thermo(double T);
     void progress_rate(std::vector<double> Yinad, double T, double R, 
                        std::vector<double> delta_k);
 };

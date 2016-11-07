@@ -280,6 +280,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
                                 Np * rxnMain.ProblemInfo.n_atoms * order + 
                                 Np * rxnMain.ProblemInfo.n_atoms;
 
+/*  RUN THE MODEL
   std::vector<double> initial_conditions(dim, 0.0);
 
   initial_conditions[0] = 1.0 * rxnMain.ProblemInfo.fuel;
@@ -299,6 +300,31 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
 
   int scen = 0;
   write_file(sample_points, returnValues, data_filename, n_times, dim, scen, 1.0, heating_rate);
+*/
+
+  rxnMain.inad_model.alphas(0,0) = -3.90372558e+04;
+  rxnMain.inad_model.alphas(0,1) =  13.6559654;
+  rxnMain.inad_model.alphas(0,2) =  1.20459536e-03;
+
+  rxnMain.inad_model.alphas(1,0) = -3.90372558e+04;
+  rxnMain.inad_model.alphas(1,1) =  13.6559654;
+  rxnMain.inad_model.alphas(1,2) =  1.20459536e-03;
+
+  rxnMain.inad_model.betas(0) = -17.0857829376;
+  rxnMain.inad_model.betas(1) = -17.0857829376;
+
+  double temperature = 2000.0;
+
+  rxnMain.inad_model.thermo(temperature);
+
+  std::cout << "h_1 = " << rxnMain.inad_model.h_prime(0) << std::endl;
+  std::cout << "h_2 = " << rxnMain.inad_model.h_prime(1) << std::endl;
+
+  std::cout << "s_1 = " << rxnMain.inad_model.s_prime(0) << std::endl;
+  std::cout << "s_2 = " << rxnMain.inad_model.s_prime(1) << std::endl;
+
+  std::cout << "cp_1 = " << rxnMain.inad_model.cp_prime(0) << std::endl;
+  std::cout << "cp_2 = " << rxnMain.inad_model.cp_prime(1) << std::endl;
 
 /**** CHECKING INADEQUACY CLASS. ****
   MatrixXd alphas(n_atoms, order+1);

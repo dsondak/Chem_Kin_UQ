@@ -17,7 +17,7 @@
 n_species     = 7     	    	 # Number of species
 n_atoms       = 2		 # Number of atoms
 n_extra       = 1                # For inert species (e.g. N2)
-n_species_inad= 7                # Number of inadequacy species
+n_species_inad = 7                # Number of inadequacy species
 n_phis        = 1                # Number of phi ICs
 n_T           = 1                # Number of initial temperatures
 n_heating     = 1                # Number of heating rates

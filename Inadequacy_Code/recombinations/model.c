@@ -161,7 +161,8 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
   VectorXd betas(n_atoms);
   betas << -17.0857829376, -17.0857829376;
 
-  rxn.inad_model.thermo(alphas, betas, temperature);
+  //rxn.inad_model.thermo(alphas, betas, temperature);
+  rxn.inad_model.thermo(temperature);
 
   // Set up s/R - h_RT for each species
   std::vector<double> delta_k(n_species_inad, 0.0);

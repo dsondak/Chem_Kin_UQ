@@ -35,7 +35,8 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user, int n_species_inad_from_user, int n_reactions_inad_from_user)
+inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_user, int extra_from_user, 
+                                    int n_species_inad_from_user, int n_reactions_inad_from_user)
 :
     n_species(n_species_from_user),               // set n_species = n_species_from_user
     n_atoms(n_atoms_from_user),                   // number of atoms in the system
@@ -46,6 +47,8 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
     nukj_p(n_species_inad, n_reactions_inad),     // Product stoichiometric coeffs
     nukj(n_species_inad, n_reactions_inad),       // Total coeffs.
     gamma(n_reactions_inad),                      // Exponent in equilibrium constant
+    alphas(n_atoms, 3),                           // Enthalpy coefficients for virtual species
+    betas(n_atoms),                               // Entropy coefficients for virtual species
     h_prime(n_atoms),                             // Enthalpy for virtual species
     cp_prime(n_atoms),                            // Specific heat for virtual species
     s_prime(n_atoms),                             // Entropy for virtual species
@@ -81,8 +84,16 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
 
 } // end inadequacy_model constructor
 
-void inadequacy_model::thermo(MatrixXd alphas, VectorXd betas, double T)
+//void inadequacy_model::thermo(MatrixXd alphas, VectorXd betas, double T)
+void inadequacy_model::thermo(double T)
 {
+
+/*
+    alphas << 1.0, 1.0, 1.0, 
+              1.0, 1.0, 1.0;
+
+    betas << 1.0, 1.0;
+*/
 
     for (unsigned int m = 0; m < n_atoms; m++)
     {
