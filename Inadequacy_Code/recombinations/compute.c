@@ -209,8 +209,6 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   // Total number of variables (species + temperature)
   const int dim = n_species + n_atoms + n_extra + 1; // + 1 for T
 
-  create_file(data_filename, n_times, dim, n_phis*n_scenario);
-
   /*===================================
   ***
   ***   Set up Antioch to do chemistry
@@ -280,7 +278,41 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
                                 Np * rxnMain.ProblemInfo.n_atoms * order + 
                                 Np * rxnMain.ProblemInfo.n_atoms;
 
-/*  RUN THE MODEL
+/*  RUN THE MODEL */
+
+/*
+
+  create_file(data_filename, n_times, dim, n_phis*n_scenario);
+
+  rxnMain.inad_model.alphas(0,0) = -3.90372558e+04;
+  rxnMain.inad_model.alphas(0,1) =  13.6559654;
+  rxnMain.inad_model.alphas(0,2) =  1.20459536e-03;
+
+  rxnMain.inad_model.alphas(1,0) = -3.90372558e+04;
+  rxnMain.inad_model.alphas(1,1) =  13.6559654;
+  rxnMain.inad_model.alphas(1,2) =  1.20459536e-03;
+
+  rxnMain.inad_model.betas(0) = -17.0857829376;
+  rxnMain.inad_model.betas(1) = -17.0857829376;
+
+  rxnMain.inad_model.Aj(0) = 1.0e+09;
+  rxnMain.inad_model.Aj(1) = 2.0e+05;
+  rxnMain.inad_model.Aj(2) = 1.0e+09;
+  rxnMain.inad_model.Aj(3) = 1.5e+03;
+  rxnMain.inad_model.Aj(4) = 1.17e+03;
+
+  rxnMain.inad_model.bj(0) = 0.5;
+  rxnMain.inad_model.bj(1) = 0.75;
+  rxnMain.inad_model.bj(2) = 0.5;
+  rxnMain.inad_model.bj(3) = 0.25;
+  rxnMain.inad_model.bj(4) = 0.1;
+
+  rxnMain.inad_model.Ej(0) = 1.65e+05;
+  rxnMain.inad_model.Ej(1) = 1.65e+05;
+  rxnMain.inad_model.Ej(2) = 1.65e+05;
+  rxnMain.inad_model.Ej(3) = 1.65e+05;
+  rxnMain.inad_model.Ej(4) = 1.65e+05;
+
   std::vector<double> initial_conditions(dim, 0.0);
 
   initial_conditions[0] = 1.0 * rxnMain.ProblemInfo.fuel;
@@ -302,43 +334,13 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   write_file(sample_points, returnValues, data_filename, n_times, dim, scen, 1.0, heating_rate);
 */
 
-  rxnMain.inad_model.alphas(0,0) = -3.90372558e+04;
-  rxnMain.inad_model.alphas(0,1) =  13.6559654;
-  rxnMain.inad_model.alphas(0,2) =  1.20459536e-03;
-
-  rxnMain.inad_model.alphas(1,0) = -3.90372558e+04;
-  rxnMain.inad_model.alphas(1,1) =  13.6559654;
-  rxnMain.inad_model.alphas(1,2) =  1.20459536e-03;
-
-  rxnMain.inad_model.betas(0) = -17.0857829376;
-  rxnMain.inad_model.betas(1) = -17.0857829376;
-
-  double temperature = 2000.0;
-
-  rxnMain.inad_model.thermo(temperature);
-
-  std::cout << "h_1 = " << rxnMain.inad_model.h_prime(0) << std::endl;
-  std::cout << "h_2 = " << rxnMain.inad_model.h_prime(1) << std::endl;
-
-  std::cout << "s_1 = " << rxnMain.inad_model.s_prime(0) << std::endl;
-  std::cout << "s_2 = " << rxnMain.inad_model.s_prime(1) << std::endl;
-
-  std::cout << "cp_1 = " << rxnMain.inad_model.cp_prime(0) << std::endl;
-  std::cout << "cp_2 = " << rxnMain.inad_model.cp_prime(1) << std::endl;
-
 /**** CHECKING INADEQUACY CLASS. ****
-  MatrixXd alphas(n_atoms, order+1);
-  alphas << -3.90372558e+04, 13.6559654, 1.20459536e-03, 
-            -3.90372558e+04, 13.6559654, 1.20459536e-03;
-
-  VectorXd betas(n_atoms);
-  betas << -17.0857829376, -17.0857829376;
 
   double temperature = 2000.0;
   
-  rxnMain.inad_model.thermo(alphas, betas, temperature);
+  rxnMain.inad_model.thermo(temperature);
 
-  std::vector<double> Yinad(rxnMain.ProblemInfo.n_species, 0.0);
+  std::vector<double> Yinad(rxnMain.inad_model.n_species_inad, 0.0);
 
   Yinad[0] = 2.0;
   Yinad[1] = 1.0;

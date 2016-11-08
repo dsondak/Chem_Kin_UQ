@@ -154,14 +154,6 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
   }
 
-  MatrixXd alphas(n_atoms, 3);
-  alphas << -3.90372558e+04, 13.6559654, 1.20459536e-03, 
-            -3.90372558e+04, 13.6559654, 1.20459536e-03;
-
-  VectorXd betas(n_atoms);
-  betas << -17.0857829376, -17.0857829376;
-
-  //rxn.inad_model.thermo(alphas, betas, temperature);
   rxn.inad_model.thermo(temperature);
 
   // Set up s/R - h_RT for each species

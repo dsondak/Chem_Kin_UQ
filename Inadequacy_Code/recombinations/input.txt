@@ -36,6 +36,6 @@ specieslist   = '2 3 4 9 2 3 6 18 12' # Prime number representation of species
 prime_sieve   = '2 3'                 # Prime number representation of species (first H then O)
 thermo        = 'nasa7_thermo.xml' # Input file for thermodynamics
 reactionset   = 'five_rxn.xml'     # Input file for reactions
-dataset       = 'inverse_code.h5'  # Datafile to write to
+dataset       = 'inverse_code_mods.h5'  # Datafile to write to
 time_ig       = 0.019462           # Ignition time of detailed model
 Tig           = 919.837099088      # Ignition temperature of detailed model
