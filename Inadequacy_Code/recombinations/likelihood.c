@@ -57,8 +57,8 @@ Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::Vec
     n_phis(rxnInfo->ProblemInfo.n_phis),                                           // Number of equivalence ratios
     n_times(rxnInfo->ProblemInfo.n_times),                                         // Number of sample points
     n_scen(rxnInfo->ProblemInfo.n_scenario),                                       // Number of scenarios (not including phi)
-    num_fields(rxnInfo->ProblemInfo.n_species + rxnInfo->ProblemInfo.n_extra + 1), // Number of fields (species + temperature)
-    n_species(rxnInfo->ProblemInfo.n_species + rxnInfo->ProblemInfo.n_atoms),      // Number of species
+    num_fields(rxnInfo->ProblemInfo.n_species + rxnInfo->ProblemInfo.n_extra + 1), // Number of fields (species + temperature NOT including catchalls)
+    n_species(rxnInfo->ProblemInfo.n_species + rxnInfo->ProblemInfo.n_atoms),      // Number of species (including catchalls)
     obs_data("truth_data.h5", n_phis, n_scen, n_times, num_fields)                 // Observation data class
 {
   // Constructor
@@ -94,8 +94,8 @@ double Likelihood<V, M>::lnValue(
 
   // Set up problem parameters
   const int n_atoms = rxn->ProblemInfo.n_atoms;             // Number of atoms in the model
-  const int n_total = n_species + rxn->ProblemInfo.n_extra; // Species + catchalls + neglected species (N2)
-  const int n_data = rxn->ProblemInfo.n_species;            // Active species (not including neglected species)
+  const int n_total = n_species + rxn->ProblemInfo.n_extra; // Species + catchalls + inert species (N2)
+  const int n_data = rxn->ProblemInfo.n_species;            // Active species (not including inert species)
   const int dim = num_fields + n_atoms;                     // Total number of fields (catchalls, species, temperature)
   double varY   = 5.0e-03;
   double varT   = 2.0e+03;
@@ -103,23 +103,33 @@ double Likelihood<V, M>::lnValue(
 
   // Set up initial conditions
   std::vector<double> initial_conditions(dim, 0.0);
-  initial_conditions[3]  = rxn->ProblemInfo.oxidizer_i; // O2
-  initial_conditions[10] = rxn->ProblemInfo.nitrogen;   // N2 
+  initial_conditions[1]  = rxn->ProblemInfo.oxidizer_i; // O2
+  initial_conditions[7] = rxn->ProblemInfo.nitrogen;   // N2 
 
   // Solution vector
-  std::vector<double> returnValues(n_times * dim + 1, 0.0); // Added one for ignition time
+  std::vector<double> returnValues(n_times * dim + 1, 0.0); // Added one for ignition temperature
 
-  // Copy paramValues into struct
-  //rxn->model_params.resize(n_xi + rxn->S.n_eq_nonlin * rxn->S.n_atoms + 2); // + 3 for global Arrhenius reaction
-
-  // Copy first enthalpy coefficients from paramValues into struct
-/*
-  for (int i = 0; i < n_atoms; i++) 
+  // Set up inadequacy model parameters
+  // First do Arrhenius parameters
+  for (int j = 0; j < rxn->inad_model.n_reactions_inad; j++)
   {
-      rxn->model_params[n_xi + i] = paramValues[i + alpha0_range];
+      // Prefactor on j is 3 b/c of 3 Arrhenius params
+      rxn->inad_model.Aj(j) = paramValues[3 * j    ];
+      rxn->inad_model.bj(j) = paramValues[3 * j + 1];
+      rxn->inad_model.Ej(j) = paramValues[3 * j + 2];
   }
-*/
 
+  // Then do thermo-chemistry parameters
+  int n_arr_params = 3 * rxn->inad_model.n_reactions_inad;
+  for (int k = 0; k < rxn->inad_model.n_atoms; k++)
+  {
+      for (int i = 0; i < 3; i++)
+      {
+          // i < 4 b/c using quadratics for thermo-chemistry and +1 for betas
+          rxn->inad_model.alphas(k,i) = paramValues[n_arr_params + 4 * k + i];
+      }
+      rxn->inad_model.betas(k) = paramValues[n_arr_params + 4 * k + 3];
+  }
 
   double misfitValue = 0.0; // Difference between data and model
   double diff = 0.0;        // Argument of exponential in likelihood
@@ -155,37 +165,37 @@ double Likelihood<V, M>::lnValue(
           rxn->ProblemInfo.Tig     = obs_data.ignition_data[2*scen + 1];
           try
           { // Run the forward model
-               for (int n = 0; n < n_times; n++)
-               {
-                   sample_points[n] = obs_data.sample_points[(i * n_scen + ii)* n_times + n];
-               }
-               if (scen > 0)
-               {
-                  grvy_timer_reset(); // Reset timer
-               }
-               grvy_timer_begin("Time forward model");
-               hydrogenComputeModel(initial_conditions,sample_points,rxn,returnValues);
-               grvy_timer_end("Time forward model");
-               grvy_timer_finalize();
-               grvy_timer_summarize();
-               for (int j = 0; j < n_times; j++)
-               { // Loop over the sample times
-                   for (int k = 0; k < n_data; k++)
-                   { // Loop over the species
-                       // Calculate (d - model) where d is the data
-                       diff = returnValues[dim * j + (k + n_atoms)] - 
-                                obs_data.observation_data[n_times*num_fields*i + num_fields*j +k]; // Check indexing
-                       // Calculate (d - model)^T * \Sigma^{-1} * (d-model)
-                       // Assume that \Sigma is a diagonal matrix where each entry is identical and equal to variance
-                       misfitValue += diff * diff / varY;
-                   }
-                   // Temperature misfit
-                   diff = returnValues[dim*j + dim - 1] - obs_data.observation_data[n_times*num_fields*i + num_fields*j + num_fields -1];
-                   misfitValue += diff * diff / varT;
-               }
-               // Ignition temperature misfit
-               diff = returnValues[n_times * dim] - rxn->ProblemInfo.Tig;
-               misfitValue += diff * diff / var_ig;
+              for (int n = 0; n < n_times; n++)
+              {
+                  sample_points[n] = obs_data.sample_points[(i * n_scen + ii)* n_times + n];
+              }
+              if (scen > 0)
+              {
+                 grvy_timer_reset(); // Reset timer
+              }
+              grvy_timer_begin("Time forward model");
+              hydrogenComputeModel(initial_conditions,sample_points,rxn,returnValues);
+              grvy_timer_end("Time forward model");
+              grvy_timer_finalize();
+              grvy_timer_summarize();
+              for (int j = 0; j < n_times; j++)
+              { // Loop over the sample times
+                  for (int k = 0; k < n_data; k++)
+                  { // Loop over the species
+                      // Calculate (d - model) where d is the data
+                      diff = returnValues[dim * j + k] - 
+                               obs_data.observation_data[n_times*num_fields*i + num_fields*j +k];
+                      // Calculate (d - model)^T * \Sigma^{-1} * (d-model)
+                      // Assume that \Sigma is a diagonal matrix where each entry is identical and equal to variance
+                      misfitValue += diff * diff / varY;
+                  }
+                  // Temperature misfit
+                  diff = returnValues[dim*j + dim - 1] - obs_data.observation_data[n_times*num_fields*i + num_fields*j + num_fields -1];
+                  misfitValue += diff * diff / varT;
+              }
+              // Ignition temperature misfit
+              diff = returnValues[n_times * dim] - rxn->ProblemInfo.Tig;
+              misfitValue += diff * diff / var_ig;
           }
           catch(int exception)
           {
