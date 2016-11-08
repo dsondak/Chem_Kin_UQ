@@ -49,6 +49,9 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
     gamma(n_reactions_inad),                      // Exponent in equilibrium constant
     alphas(n_atoms, 3),                           // Enthalpy coefficients for virtual species
     betas(n_atoms),                               // Entropy coefficients for virtual species
+    Aj(n_reactions_inad),                         // Arrhenius prefactor for inadequacy model
+    bj(n_reactions_inad),                         // Modified Arrhenius exponent for inad. model
+    Ej(n_reactions_inad),                         // Activation energy for inadequacy model
     h_prime(n_atoms),                             // Enthalpy for virtual species
     cp_prime(n_atoms),                            // Specific heat for virtual species
     s_prime(n_atoms),                             // Entropy for virtual species
@@ -88,13 +91,6 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
 void inadequacy_model::thermo(double T)
 {
 
-/*
-    alphas << 1.0, 1.0, 1.0, 
-              1.0, 1.0, 1.0;
-
-    betas << 1.0, 1.0;
-*/
-
     for (unsigned int m = 0; m < n_atoms; m++)
     {
         h_prime(m)  = alphas(m,0) + alphas(m,1) * T + alphas(m,2) * T * T;
@@ -115,6 +111,7 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      double pa_RT = pa / RT;
      double exp_arg_j;
 
+/*
      // Make up some Arrhenius coeffs. for now
      VectorXd A(n_reactions_inad);
      VectorXd beta(n_reactions_inad);
@@ -123,7 +120,8 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
      A    << 1.0e+09, 2.0e+05, 1.0e+09, 1.5e+03, 1.17e+03;
      beta << 0.5, 0.75, 0.5, 0.25, 0.1;
      Ea   << 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05, 1.65e+05;
-     
+*/
+   
      double kfj; // forward reaction rate coeff.
      double kej; // equilibrium constant
      double kbj; // backward reaction rate coeff.
@@ -132,7 +130,7 @@ void inadequacy_model::progress_rate(std::vector<double> Yinad, double T, double
 
      for (int j = 0; j < n_reactions_inad; j++)
      {
-         kfj = A(j) * pow(T, beta(j)) * exp(-Ea(j) / RT);
+         kfj = Aj(j) * pow(T, bj(j)) * exp(-Ej(j) / RT);
          exp_arg_j = 0.0;
          for (int k = 0; k < n_species_inad; k++)
          {

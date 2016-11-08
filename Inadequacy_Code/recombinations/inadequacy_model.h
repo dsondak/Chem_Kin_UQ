@@ -23,6 +23,9 @@ class inadequacy_model
     VectorXd gamma;    // exponent in equilibrium constant
     MatrixXd alphas;   // Enthalpy coefficients for virtual species
     VectorXd betas;    // Entropy coefficients for virtual species
+    VectorXd Aj;       // Arrhenius prefactor for inadequacy model
+    VectorXd bj;       // Modified Arrhenius exponent for inad. model
+    VectorXd Ej;       // Activation energy for inadequacy model
     VectorXd h_prime;  // Enthalpy for virtual species
     VectorXd cp_prime; // Specific heat for virtual species
     VectorXd s_prime;  // Entropy for virtual species
