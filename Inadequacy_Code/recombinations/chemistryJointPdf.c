@@ -102,7 +102,7 @@ ChemistryJointPdf<V,M>::lnValue(const V& domainVector, const V* domainDirection,
   // Mean of the prior mean for inadequacy thermochemistry
   hypermean_mean = {3.90372558e+04, 13.6559654, 1.20459536e-03, 5.0, 
                     3.90372558e+04, 13.6559654, 1.20459536e-03, 10.0};
-  p_hypermean_thermo = 6 * n_reactions_inad + 4 * n_atoms; // Pointer to index
+  int p_hypermean_thermo = 6 * n_reactions_inad + 4 * n_atoms; // Pointer to index
   for (unsigned int i = 0; i < 4 * n_atoms; i++)
   {
       if (hypermean_mean[i] != 0)
@@ -148,9 +148,6 @@ ChemistryJointPdf<V,M>::lnValue(const V& domainVector, const V* domainDirection,
   }
 
   // Inadequacy thermo chemistry parameters
-  double mean;     // mean
-  double variance; // variance
-  double theta;    // parameter value
   for (unsigned int i = 0; i < 4 * n_atoms; i++)
   {
       mean     = domainVector[p_hypermean_thermo + i];
