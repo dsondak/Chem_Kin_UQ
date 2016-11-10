@@ -26,7 +26,7 @@
 #include "reaction_info.h"
 #include "model.h"
 #include "write_data.h"
-//#include "chemistryVectorRV.h"
+#include "chemistryVectorRV.h"
 //antioch
 #include <antioch/vector_utils.h>
 #include <antioch/antioch_asserts.h>
@@ -200,14 +200,11 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
      heating_rate = 0.0;
   }
 
-  // Number of parameters in reaction terms
-  // Usually will be three (A, b, Ea) but may
-  // need to modify if including three-body
-  // reactions.
-  const unsigned int n_ks = 3 * n_reactions;
-
   // Total number of variables (species + temperature)
   const int dim = n_species + n_atoms + n_extra + 1; // + 1 for T
+
+  // Number of parameters (not hyperparameters)
+  const unsigned int n_params = 3 * n_reactions_inad + 4 * n_atoms;
 
   /*===================================
   ***
@@ -244,12 +241,29 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   Antioch::KineticsEvaluator<double> kinetics(reaction_set, 0);
   Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > thermo(nasa_mixture);
 
+  // Introduce scaling factors for some of the larger parameters
+  std::vector<double> scales (n_params, 1.0);
+
+  // Now reset scaling factors for Arrhenius prefactors
+  scales[0]  = 1.0e+09;
+  scales[3]  = 1.0e+05;
+  scales[6]  = 1.0e+09;
+  scales[9]  = 1.5e+03;
+  scales[12] = 1.17e+03;
+
+  // Now reset scaling factors for Arrhenius activation energies
+  scales[2]  = 1.0e+05;
+  scales[5]  = 1.0e+05;
+  scales[8]  = 1.0e+05;
+  scales[11] = 1.0e+05;
+
   // This class contains all the chemistry and problem size information
   reaction_info rxnMain(
       &chem_mixture,
       &reaction_set,
       &thermo,
       &kinetics,
+      scales,
       n_species,
       n_atoms,
       n_extra,
@@ -273,111 +287,142 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   const unsigned int n_arr = 3; // number of Arrhenius parameters
   const unsigned int order = 2; // polynomial order of catchall thermochemistry
 
-  const unsigned int n_params = Np * n_arr * rxnMain.ProblemInfo.n_reactions + 
-                                Np * rxnMain.ProblemInfo.n_atoms + 
-                                Np * rxnMain.ProblemInfo.n_atoms * order + 
-                                Np * rxnMain.ProblemInfo.n_atoms;
+  const unsigned int n_params_total = Np * n_arr * rxnMain.inad_model.n_reactions_inad + 
+                                      Np * rxnMain.ProblemInfo.n_atoms + 
+                                      Np * rxnMain.ProblemInfo.n_atoms * order + 
+                                      Np * rxnMain.ProblemInfo.n_atoms;
 
-/*  RUN THE MODEL */
-
-/*
-
-  create_file(data_filename, n_times, dim, n_phis*n_scenario);
-
-  rxnMain.inad_model.alphas(0,0) = -3.90372558e+04;
-  rxnMain.inad_model.alphas(0,1) =  13.6559654;
-  rxnMain.inad_model.alphas(0,2) =  1.20459536e-03;
-
-  rxnMain.inad_model.alphas(1,0) = -3.90372558e+04;
-  rxnMain.inad_model.alphas(1,1) =  13.6559654;
-  rxnMain.inad_model.alphas(1,2) =  1.20459536e-03;
-
-  rxnMain.inad_model.betas(0) = -17.0857829376;
-  rxnMain.inad_model.betas(1) = -17.0857829376;
-
-  rxnMain.inad_model.Aj(0) = 1.0e+09;
-  rxnMain.inad_model.Aj(1) = 2.0e+05;
-  rxnMain.inad_model.Aj(2) = 1.0e+09;
-  rxnMain.inad_model.Aj(3) = 1.5e+03;
-  rxnMain.inad_model.Aj(4) = 1.17e+03;
-
-  rxnMain.inad_model.bj(0) = 0.5;
-  rxnMain.inad_model.bj(1) = 0.75;
-  rxnMain.inad_model.bj(2) = 0.5;
-  rxnMain.inad_model.bj(3) = 0.25;
-  rxnMain.inad_model.bj(4) = 0.1;
-
-  rxnMain.inad_model.Ej(0) = 1.65e+05;
-  rxnMain.inad_model.Ej(1) = 1.65e+05;
-  rxnMain.inad_model.Ej(2) = 1.65e+05;
-  rxnMain.inad_model.Ej(3) = 1.65e+05;
-  rxnMain.inad_model.Ej(4) = 1.65e+05;
-
-  std::vector<double> initial_conditions(dim, 0.0);
-
-  initial_conditions[0] = 1.0 * rxnMain.ProblemInfo.fuel;
-  initial_conditions[1] = rxnMain.ProblemInfo.oxidizer_i;
-  initial_conditions[7] = rxnMain.ProblemInfo.nitrogen;
-  initial_conditions[dim-1] = rxnMain.ProblemInfo.TO;
-
-  std::vector<double> sample_points(n_times, 0.0);
-  for (int n = 0; n < n_times; n++)
-  {
-      sample_points[n] = n * timePoint + 1.0e-06;
-  }
-
-  std::vector<double> returnValues(n_times * dim + 2, 0.0); // Added two for ignition data
-
-  hydrogenComputeModel(initial_conditions,sample_points,&rxnMain,returnValues);
-
-  int scen = 0;
-  write_file(sample_points, returnValues, data_filename, n_times, dim, scen, 1.0, heating_rate);
-*/
-
-/**** CHECKING INADEQUACY CLASS. ****
-
-  double temperature = 2000.0;
+  /*======================================================
+  ***
+  *** Instantiate the parameter space
+  ***
+  ========================================================*/
   
-  rxnMain.inad_model.thermo(temperature);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> paramSpace(env, "param_", n_params_total, NULL);
 
-  std::vector<double> Yinad(rxnMain.inad_model.n_species_inad, 0.0);
+  /*======================================================
+  ***
+  *** Instantiate the parameter domain
+  ***
+  ========================================================*/
 
-  Yinad[0] = 2.0;
-  Yinad[1] = 1.0;
+  QUESO::GslVector paramMinValues(paramSpace.zeroVector());
+  QUESO::GslVector paramMaxValues(paramSpace.zeroVector());
 
-  double R_universal = Antioch::Constants::R_universal<double>();
-  double RT = R_universal * temperature;
-
-  int Nc = rxnMain.ProblemInfo.n_species;
-
-  Antioch::TempCache<double> temp_cache(temperature);
-
-  // Set up s/R - h_RT for each species
-  std::vector<double> delta_k(Nc, 0.0);
-
-  // First just do H2 and O2
-  for (int k = 0; k < 2; k++)
-  {   
-      delta_k[k] = rxnMain.Thermo->s_over_R(temp_cache, k) - 
-                   rxnMain.Thermo->h_over_RT(temp_cache, k);
-  }
-  // Skipped H and O so need to decrement index by 2
-  for (int k = 4; k < rxnMain.ProblemInfo.n_species; k++)
-  {   
-      delta_k[k - 2] = rxnMain.Thermo->s_over_R(temp_cache, k) - 
-                   rxnMain.Thermo->h_over_RT(temp_cache, k);
-  }
-  // Now do catchalls (still need to decrement by 2)
-  for (int k = 0; k < n_atoms; k++)
+  // Domain for all parameters and their hypermeans
+  for (int i = 0; i < 2 * n_params; i++)
   {
-      delta_k[rxnMain.ProblemInfo.n_species + k - 2] = rxnMain.inad_model.s_prime(k) / R_universal - 
-                                                   rxnMain.inad_model.h_prime(k) / RT;
+      paramMinValues[i] = -INFINITY;
+      paramMaxValues[i] =  INFINITY;
   }
 
-  rxnMain.inad_model.progress_rate(Yinad, temperature, R_universal, delta_k);
+  // Domain for hypervariances
+  for (int i = 0; i < n_params; i++)
+  {
+      paramMinValues[2 * n_params + i] = 0.0;
+      paramMaxValues[2 * n_params + i] = INFINITY;
+  }
 
-  std::cout << rxnMain.inad_model.rj << std::endl;
-*/
+  QUESO::BoxSubset<QUESO::GslVector,QUESO::GslMatrix>
+    paramDomain("param_", paramSpace, paramMinValues, paramMaxValues);
 
+  /*======================================================
+  ***
+  *** Instantiate the likelihood function  object to be 
+  *** used by QUESO.
+  ***
+  ========================================================*/
+  
+  Likelihood<QUESO::GslVector, QUESO::GslMatrix> lhood(env, paramDomain, &rxnMain);
+
+  /*======================================================
+  ***
+  *** Define the prior
+  ***
+  ========================================================*/
+
+  // Chemistry prior for all parameters
+  QUESO::ChemistryVectorRV<QUESO::GslVector, QUESO::GslMatrix> 
+      priorTotal("priorTotal_", paramDomain, rxnMain.inad_model.n_reactions_inad, rxnMain.inad_model.n_atoms);
+
+  /*======================================================
+  ***
+  *** Instantiate the inverse problem
+  ***
+  ========================================================*/
+
+  QUESO::GenericVectorRV<>postTotal("post_", paramSpace);
+           
+  QUESO::StatisticalInverseProblem<> ip("", NULL, priorTotal, lhood, postTotal); 
+
+  /*======================================================
+  ***
+  *** Solve the inverse problem
+  ***
+  ========================================================*/
+
+  // Set up initial parameter values
+
+  QUESO::GslVector paramInitials(paramSpace.zeroVector());
+
+  std::vector<double> init_kinetics = {1.0, 0.0, 1.65,
+                                       2.0, 0.0, 1.65, 
+                                       1.0, 0.0, 1.65,
+                                       1.5, 0.0, 1.65, 
+                                       1.17, 0.0, 1.65};
+
+  std::vector<double> init_thermo = {3.90372558e+04, 13.6559654, 1.20459536e-03, 5.0, 
+                                     3.90372558e+04, 13.6559654, 1.20459536e-03, 10.0};
+
+  // First set up the Arrhenius inadequacy parameters
+  for (int i = 0; i < 3 * n_reactions_inad; i++)
+  {
+      paramInitials[i] = init_kinetics[i];
+  }
+
+  // Next set up the thermochemistry inadequacy parameters
+  for (int i = 0; i < 4 * n_atoms; i++)
+  {
+      paramInitials[3 * n_reactions_inad + i] = init_thermo[i];
+  }
+
+  // Now set up hypermeans of the Arrhenius inadequacy parameters
+  for (int i = 0; i < 3 * n_reactions_inad; i++)
+  {
+      paramInitials[n_params + i] = init_kinetics[i];
+  }
+
+  // And then do hypermeans of the thermochemistry inad. params.
+  for (int i = 0; i < 4 * n_atoms; i++)
+  {
+      paramInitials[n_params + 3 * n_reactions_inad + i] = init_thermo[i];
+  }
+
+  // Finally do the hypervariances
+  for (int i = 0; i < n_params; i++)
+  {
+      paramInitials[2 * n_params + i] = 10.0;
+  }
+
+  // Set up covariance matrix for parameters
+  QUESO::GslVector diagVec(paramSpace.zeroVector());
+  QUESO::GslMatrix proposalCovMatrix(diagVec);
+
+  double var = 1.0e-02;
+  for (int i = 0; i < n_params_total; i++)
+  {
+      if (paramInitials[i] != 0)
+      {
+         proposalCovMatrix(i,i) = var * paramInitials[i] * paramInitials[i];
+      }
+      else
+      {
+         proposalCovMatrix(i,i) = var;
+      }
+  }
+
+  // Solve!
+  //ip.solveWithBayesMetropolisHastings(NULL, paramInitials, &proposalCovMatrix);
+  
   return;
 }
