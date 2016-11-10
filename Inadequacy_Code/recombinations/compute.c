@@ -422,7 +422,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   }
 
   // Solve!
-  //ip.solveWithBayesMetropolisHastings(NULL, paramInitials, &proposalCovMatrix);
+  ip.solveWithBayesMetropolisHastings(NULL, paramInitials, &proposalCovMatrix);
   
   return;
 }
