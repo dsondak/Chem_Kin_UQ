@@ -128,7 +128,8 @@ double Likelihood<V, M>::lnValue(
           // i < 4 b/c using quadratics for thermo-chemistry and +1 for betas
           rxn->inad_model.alphas(k,i) = rxn->scale_factors[n_arr_params + 4 * k + i] * paramValues[n_arr_params + 4 * k + i];
       }
-      rxn->inad_model.betas(k) = rxn->scale_factors[n_arr_params + 4 * k + 3] * paramValues[n_arr_params + 4 * k + 3];
+      // Note that these are not actually betas.  They are the gammas.  We'll create beta later (in model function).
+      rxn->inad_model.betas(k) = rxn->scale_factors[n_arr_params + 4 * k + 3] * exp(paramValues[n_arr_params + 4 * k + 3]);
   }
 
   double misfitValue = 0.0; // Difference between data and model
