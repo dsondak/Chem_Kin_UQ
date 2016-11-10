@@ -20,6 +20,7 @@ struct reaction_info {
       Antioch::ReactionSet<double> * reaction_set, 
       Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * thermo,
       Antioch::KineticsEvaluator<double> * kinetics,
+      std::vector<double> & scales,
       int species_from_user,
       int atoms_from_user,
       int extra_from_user,
@@ -44,6 +45,7 @@ struct reaction_info {
   Antioch::ReactionSet<double> * Reaction_set;
   Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * Thermo;
   Antioch::KineticsEvaluator<double> * Kinetics;
+  std::vector<double> & scale_factors;
   int n_species;
   int n_atoms;
   int n_extra;

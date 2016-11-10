@@ -114,9 +114,9 @@ double Likelihood<V, M>::lnValue(
   for (int j = 0; j < rxn->inad_model.n_reactions_inad; j++)
   {
       // Prefactor on j is 3 b/c of 3 Arrhenius params
-      rxn->inad_model.Aj(j) = paramValues[3 * j    ];
-      rxn->inad_model.bj(j) = paramValues[3 * j + 1];
-      rxn->inad_model.Ej(j) = paramValues[3 * j + 2];
+      rxn->inad_model.Aj(j) = rxn->scale_factors[j] * exp(paramValues[3 * j]);
+      rxn->inad_model.bj(j) = rxn->scale_factors[j] * paramValues[3 * j + 1];
+      rxn->inad_model.Ej(j) = rxn->scale_factors[j] * paramValues[3 * j + 2];
   }
 
   // Then do thermo-chemistry parameters
@@ -126,9 +126,9 @@ double Likelihood<V, M>::lnValue(
       for (int i = 0; i < 3; i++)
       {
           // i < 4 b/c using quadratics for thermo-chemistry and +1 for betas
-          rxn->inad_model.alphas(k,i) = paramValues[n_arr_params + 4 * k + i];
+          rxn->inad_model.alphas(k,i) = rxn->scale_factors[n_arr_params + 4 * k + i] * paramValues[n_arr_params + 4 * k + i];
       }
-      rxn->inad_model.betas(k) = paramValues[n_arr_params + 4 * k + 3];
+      rxn->inad_model.betas(k) = rxn->scale_factors[n_arr_params + 4 * k + 3] * paramValues[n_arr_params + 4 * k + 3];
   }
 
   double misfitValue = 0.0; // Difference between data and model
