@@ -15,12 +15,12 @@ namespace QUESO {
 
 // Constructor -------------------------------------
 template<class V,class M>
-ChemistryJointPdf<V,M>::ChemistryJointPdf(const char* prefix, const VectorSet<V,M>& domainSet, int num_xi, int num_model_params, int num_catchalls)
+ChemistryJointPdf<V,M>::ChemistryJointPdf(const char* prefix, const VectorSet<V,M>& domainSet, 
+                                          int num_reactions_inad, int num_atoms)
   :
   BaseJointPdf<V,M>(((std::string)(prefix)+"total").c_str(),domainSet), 
-  n_xi(num_xi),
-  n_k(num_model_params),
-  n_atoms(num_catchalls)
+  n_reactions_inad(num_reactions_inad),
+  n_atoms(num_atoms)
 {
   if ((m_env.subDisplayFile()) && (m_env.displayVerbosity() >= 54))
   {
@@ -71,155 +71,102 @@ ChemistryJointPdf<V,M>::lnValue(const V& domainVector, const V* domainDirection,
   if (domainVector[0]) {}; // just to remove compiler warning
   if (domainDirection) {}; // just to remove compiler warning
 
-  double logpdf = 0.;
-  double pdf = 0.;
-  double pdfnorm = 0.;
-  double pdflogn = 0.;
+  double pdf    = 0.0;
+  double logpdf = 0.0;
 
-  // Mean of the prior mean for xi and the catchall reactions
-  double meanMu = 3.0;  // mean
-  double varMu = 0.01 * meanMu * meanMu;  // variance
-  for (unsigned int i = 0; i < n_xi; i++)
+  // Mean of the prior mean for inadequacy kinetics
+  std::vector<double> hypermean_mean = {1.0, 0.0, 1.65,
+                                        2.0, 0.0, 1.65, 
+                                        1.0, 0.0, 1.65,
+                                        1.5, 0.0, 1.65, 
+                                        1.17, 0.0, 1.65};
+  double hypermean_variance; // Variance of the hypermean for inadequacy kinetics
+  double var = 0.01; // Variance factor (so std = 10% of mean)
+  double var1 = 0.5; // Variance factor for modified Arrhenius parameters
+  int p_hypermean_kinetics = 3 * n_reactions_inad + 4 * n_atoms; // Pointer to index
+  for (unsigned int i = 0; i < 3 * n_reactions_inad; i++)
   {
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0)) 
-      { //  Set PDF to zero at \pm \infty
-          pdf = 0.;
-          logpdf = log(pdf);
+      if (hypermean_mean[i] != 0)
+      {
+         hypermean_variance = var * hypermean_mean[i] * hypermean_mean[i];
       }
       else
       {
-          pdfnorm = -log(sqrt(2 * M_PI * varMu)) - 1 / (2 * varMu) * pow((domainVector[i] - meanMu),2); 
-          logpdf = logpdf + pdfnorm;
+         hypermean_variance = var1; // Only for modified Arrhenius parameters
       }
-  }
-
-  // Variance of the prior variance for xi and the catchall reactions
-  for (unsigned int i = n_xi; i < 2*n_xi; i++)
-  {
-      if ((domainVector[i] == -INFINITY ) || (domainVector[i] ==  INFINITY ) || (m_normalizationStyle != 0)) 
-      {
-         pdf = 0.;
-         logpdf = log(pdf);
-      }
-      else
-      {
-          logpdf = logpdf - domainVector[i];
-      }
+      pdf = -log(sqrt(2.0 * M_PI * hypermean_variance)) - 
+                 1.0 / 2.0 / hypermean_variance * pow((domainVector[p_hypermean_kinetics + i] - hypermean_mean[i]), 2); 
+      logpdf += pdf;
   }
 
-  // xi and the catchall reactions
-  for (unsigned int i = 2*n_xi; i < 3*n_xi; i++)
+  // Mean of the prior mean for inadequacy thermochemistry
+  hypermean_mean = {3.90372558e+04, 13.6559654, 1.20459536e-03, 5.0, 
+                    3.90372558e+04, 13.6559654, 1.20459536e-03, 10.0};
+  p_hypermean_thermo = 6 * n_reactions_inad + 4 * n_atoms; // Pointer to index
+  for (unsigned int i = 0; i < 4 * n_atoms; i++)
   {
-      double mu = domainVector[i - 2*n_xi];     // mean
-      double eta = exp(domainVector[i - n_xi]); // variance
-      double xi = exp(domainVector[i]);
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0))
+      if (hypermean_mean[i] != 0)
       {
-         pdf = 0.;
-         logpdf = log(pdf);}
-      else
-      {
-         pdflogn = -log(xi * sqrt(2 * M_PI * eta)) - 1 / (2 * eta) * pow((domainVector[i] - mu),2);
-         logpdf = logpdf + pdflogn;
-      }
-  }
-  // Catchall enthalpies:
-  //   hk = \alpha_{0k} + \alpha_{1k}*T + \alpha_{2k} * T * T
-  // Mean of the prior mean for \alpha_{0k}
-  double meanMuEn = 10.0; // mean 
-  double varMuEn = 0.01 * meanMuEn * meanMuEn;  // variance
-  for (unsigned int i = 3*n_xi; i < 3*n_xi + n_atoms; i++)
-  {
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0   ))
-      {
-         pdf = 0.;
-         logpdf = log(pdf);
+         hypermean_variance = var * hypermean_mean[i] * hypermean_mean[i];
       }
       else
       {
-         pdfnorm = -log(sqrt(2 * M_PI * varMuEn)) - 1 / (2 * varMuEn) *pow((domainVector[i] - meanMuEn),2); 
-         logpdf = logpdf + pdfnorm;
+         hypermean_variance = var;
       }
+      pdf = -log(sqrt(2.0 * M_PI * hypermean_variance)) - 
+                 1.0 / 2.0 / hypermean_variance * pow((domainVector[p_hypermean_thermo + i] - hypermean_mean[i]), 2); 
+      logpdf += pdf;
   }
-  // Mean of the prior mean for \alpha_{ik}, i > 0
-  // Note:  These are > 0 so we use a lognormal prior.
-  for (unsigned int i = 3*n_xi + n_atoms; i < 3*n_xi + 3*n_atoms; i++)
-  {
-      double mu = -6.; //mean
-      double eta = 0.01 * mu * mu;  //variance
-      double beta = exp(domainVector[i]);
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0))
-      {
-         pdf = 0.;
-         logpdf = log(pdf);}
-      else
-      {
-         pdflogn = -log(beta * sqrt(2 * M_PI * eta)) - 1 / (2 * eta) * pow((domainVector[i] - mu),2); // with jacobian included
-         logpdf = logpdf + pdflogn;
-      }
-  }
-  // Variance of the prior variance for all catchall enthalpy coefficients
-  for (unsigned int i = 3*n_xi + 3*n_atoms; i < 3*n_xi + 6*n_atoms; i++)
-  {
-      if ((domainVector[i] == -INFINITY ) || (domainVector[i] ==  INFINITY ) || (m_normalizationStyle != 0))
-      {
-         pdf = 0.;
-         logpdf = log(pdf);
-      }
-      else
-      {
-         logpdf = logpdf - domainVector[i];
-      }
-  }
-  // Catchall enthalpy coefficients for \alpha_{0k}
-  for (unsigned int i = 3*n_xi + 6*n_atoms; i < 3*n_xi + 7*n_atoms; i++)
-  {
-      double mu = domainVector[i - 6*n_atoms]; //mean
-      double eta = exp(domainVector[i - 3*n_atoms]); //variance
-      double alpha = domainVector[i];
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0))
-      {
-         pdf = 0.;
-         logpdf = log(pdf);}
-      else
-      {
-         pdflogn = -log(sqrt(2 * M_PI * eta)) - 1 / (2 * eta) * pow((alpha - mu),2); 
-         logpdf = logpdf + pdflogn;
-      }
-  }
-  // Catchall enthalpy coefficients for \alpha_{ik}, i > 0
-  for (unsigned int i = 3*n_xi + 7*n_atoms; i < 3*n_xi + 9*n_atoms; i++)
-  {
-      double mu = domainVector[i - 6*n_atoms]; // mean
-      double eta = exp(domainVector[i - 3*n_atoms]); // variance
-      double beta = exp(domainVector[i]);
-      if ((domainVector[i] == -INFINITY) || (domainVector[i] ==  INFINITY) || (m_normalizationStyle != 0))
-      {
-         pdf = 0.;
-         logpdf = log(pdf);}
-      else 
-      {
-         pdflogn = -log(beta * sqrt(2 * M_PI * eta)) - 1 / (2 * eta) * pow((domainVector[i] - mu),2); // with jacobian included
-         logpdf = logpdf + pdflogn;
-      }
-  }
-/*
-  // Global activation energy
-  double mu_Tg = 1000.0; // Mean
-  double var_Tg = 0.01 * mu_Tg * mu_Tg; // Variance
-  pdfnorm = -log(sqrt(2.0 * M_PI * var_Tg)) - 1.0 / (2.0 * var_Tg) * pow((domainVector[3*n_xi + n_k + 9*n_atoms] - mu_Tg), 2.0);
-  logpdf  = logpdf + pdfnorm;
-*/
 
-  double mu_Tigg = 919.0; // Mean
-  double var_Tigg = 0.01 * mu_Tigg * mu_Tigg; // Variance
-  pdfnorm = -log(sqrt(2.0 * M_PI * var_Tigg)) - 1.0 / (2.0 * var_Tigg) * pow((domainVector[3*n_xi + 9*n_atoms] - mu_Tigg), 2.0);
-  logpdf  = logpdf + pdfnorm;
+  // Variance of the prior variance for inadequacy parameters
+  const unsigned int n_params = 3 * n_reactions_inad + 4 * n_atoms;
+  int p_hypervar = 2 * n_params;
+  for (unsigned int i = 0; i < n_params; i++)
+  {
+      logpdf -= domainVector[p_hypervar + i]; // Jeffries prior
+  }
 
-  double mu_Tadg = 2680.0; // Mean
-  double var_Tadg = 0.01 * mu_Tadg * mu_Tadg; // Variance
-  pdfnorm = -log(sqrt(2.0 * M_PI * var_Tadg)) - 1.0 / (2.0 * var_Tadg) * pow((domainVector[3*n_xi + 9*n_atoms + 1] - mu_Tadg), 2.0);
-  logpdf  = logpdf + pdfnorm;
+  // Inadequacy kinetics parameters
+  double mean;     // mean
+  double variance; // variance
+  double theta;    // parameter value
+  for (unsigned int i = 0; i < 3 * n_reactions_inad; i++)
+  {
+      mean     = domainVector[p_hypermean_kinetics + i];
+      variance = exp(domainVector[p_hypervar + i]);
+      if (i % 3 == 0)
+      {
+         theta = exp(domainVector[i]);
+         pdf   = -log(theta * sqrt(2.0 * M_PI * variance)) - 1.0 / 2.0 / variance * pow((domainVector[i] - mean), 2);
+      }
+      else
+      {
+         pdf = -log(sqrt(2.0 * M_PI * variance)) - 1.0 / 2.0 / variance * pow((domainVector[i] - mean), 2);
+      }
+
+      logpdf += pdf;
+  }
+
+  // Inadequacy thermo chemistry parameters
+  double mean;     // mean
+  double variance; // variance
+  double theta;    // parameter value
+  for (unsigned int i = 0; i < 4 * n_atoms; i++)
+  {
+      mean     = domainVector[p_hypermean_thermo + i];
+      variance = exp(domainVector[p_hypervar + 3 * n_reactions_inad + i]);
+      if (i % 4 == 0)
+      {
+         pdf  = -log(sqrt(2.0 * M_PI * variance)) - 1.0 / 2.0 / variance * pow((domainVector[3 * n_reactions_inad + i] - mean), 2);
+      }
+      else
+      {
+         theta = exp(domainVector[3 * n_reactions_inad + i]);
+         pdf   = -log(theta * sqrt(2.0 * M_PI * variance)) - 1.0 / 2.0 / variance * pow((domainVector[3 * n_reactions_inad + i] - mean), 2);
+      }
+
+      logpdf += pdf;
+  }
 
   // Now return the joing pdf
   return logpdf;

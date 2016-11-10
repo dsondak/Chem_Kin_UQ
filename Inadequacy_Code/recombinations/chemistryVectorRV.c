@@ -8,12 +8,12 @@ namespace QUESO {
 
 // Default constructor-------------------------------
 template<class V, class M>
-ChemistryVectorRV<V,M>::ChemistryVectorRV(const char* prefix, const VectorSet<V,M>& imageSet, int num_xi, int num_model_params, int num_catchalls)
+ChemistryVectorRV<V,M>::ChemistryVectorRV(const char* prefix, const VectorSet<V,M>& imageSet, 
+                                          int num_reactions_inad, int num_atoms)
   :
   BaseVectorRV<V,M>(((std::string)(prefix)+"total").c_str(),imageSet),
-  n_xi(num_xi),
-  n_k(num_model_params),
-  n_atoms(num_catchalls)
+  n_reactions_inad(num_reactions_inad),
+  n_atoms(num_atoms)
 {
   if ((m_env.subDisplayFile()) && (m_env.displayVerbosity() >= 54))
   {
@@ -21,7 +21,7 @@ ChemistryVectorRV<V,M>::ChemistryVectorRV(const char* prefix, const VectorSet<V,
   }
   
   // the pdf is the only thing we need
-  m_pdf        = new ChemistryJointPdf<V,M>(m_prefix.c_str(), m_imageSet, n_xi, n_k, n_atoms);
+  m_pdf        = new ChemistryJointPdf<V,M>(m_prefix.c_str(), m_imageSet, n_reactions_inad, n_atoms);
   m_realizer   = NULL; // new ChemistryVectorRealizer<V,M>(m_prefix.c_str(),m_imageSet);
   m_subCdf     = NULL; // FIX ME: complete code
   m_unifiedCdf = NULL; // FIX ME: complete code

@@ -36,7 +36,7 @@ clean:
 	rm -f *.o
 	rm -f ip-catchall
 
-ip-catchall: ip_catchall.o compute.o problem_size.o likelihood.o reaction_info.o  model.o inadequacy_model.o write_data.o truth_data.o
+ip-catchall: ip_catchall.o compute.o problem_size.o likelihood.o reaction_info.o  model.o inadequacy_model.o write_data.o truth_data.o chemistryVectorRV.o chemistryJointPdf.o
 	$(CXX) ip_catchall.o \
 	       compute.o \
                problem_size.o \
@@ -46,6 +46,8 @@ ip-catchall: ip_catchall.o compute.o problem_size.o likelihood.o reaction_info.o
                inadequacy_model.o \
                write_data.o \
                truth_data.o \
+               chemistryVectorRV.o \
+	       chemistryJointPdf.o \
 	       -o ip-catchall $(LIBS)
 
 %.o: %.c

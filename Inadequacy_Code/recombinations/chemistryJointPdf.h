@@ -26,7 +26,7 @@ public:
   /*! Constructs a new object of the class, given a prefix and the domain set of the jeffreys PDF.  */
   ChemistryJointPdf(const char* prefix,
                     const VectorSet<V,M>& totalDomain,
-                    int num_xi, int num_model_params, int num_catchalls);
+                    int num_reactions_inad, int num_atoms);
   //! Destructor
  ~ChemistryJointPdf();
  //@}
@@ -44,9 +44,9 @@ public:
   //! Logarithm of the value of the jeffreys PDF.
   /*! Analogous to the actualValue routine, except that the logarithm of the calculated value is
    * returned. */
-  double lnValue (const V& domainVector, const V* domainDirection, V* gradVector, M* hessianMatrix, V* hessianEffect) const;
-  int n_xi;
-  int n_k;
+  double lnValue (const V& domainVector, const V* domainDirection, 
+                  V* gradVector, M* hessianMatrix, V* hessianEffect) const;
+  int n_reactions_inad;
   int n_atoms;
   
   //TODO: do we want this part?

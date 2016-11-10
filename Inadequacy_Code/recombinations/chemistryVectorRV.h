@@ -34,7 +34,7 @@ public:
 //                         const VectorSet<V,M>& imageSetC,
 //                         const VectorSet<V,M>& imageSetK,
                          const VectorSet<V,M>& imageSet,
-                         int num_xi, int num_model_params, int num_catchalls);
+                         int num_reactions_inad, int num_atoms);
   //! Virtual destructor
   virtual ~ChemistryVectorRV();
   //@}
@@ -46,8 +46,7 @@ public:
   void print(std::ostream& os) const;
   //@}
 
-  int n_xi;
-  int n_k;
+  int n_reactions_inad;
   int n_atoms;
 
 private:
