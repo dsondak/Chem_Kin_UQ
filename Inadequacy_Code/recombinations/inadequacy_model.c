@@ -87,14 +87,43 @@ inadequacy_model::inadequacy_model (int n_species_from_user, int n_atoms_from_us
 
 } // end inadequacy_model constructor
 
-//void inadequacy_model::thermo(MatrixXd alphas, VectorXd betas, double T)
-void inadequacy_model::thermo(double T)
+void inadequacy_model::calc_all_thermo(double T)
 {
 
     for (unsigned int m = 0; m < n_atoms; m++)
     {
         h_prime(m)  = alphas(m,0) + alphas(m,1) * T + alphas(m,2) * T * T;
         cp_prime(m) =               alphas(m,1)  + 2.0 * alphas(m,2) * T;
+        s_prime(m)  = betas(m) + alphas(m,1) * log(T) + 2.0 * alphas(m,2) * T;
+    }
+
+}
+
+void inadequacy_model::calc_h_prime(double T)
+{
+
+    for (unsigned int m = 0; m < n_atoms; m++)
+    {
+        h_prime(m)  = alphas(m,0) + alphas(m,1) * T + alphas(m,2) * T * T;
+    }
+
+}
+
+void inadequacy_model::calc_cp_prime(double T)
+{
+
+    for (unsigned int m = 0; m < n_atoms; m++)
+    {
+        cp_prime(m) = alphas(m,1)  + 2.0 * alphas(m,2) * T;
+    }
+
+}
+
+void inadequacy_model::calc_s_prime(double T)
+{
+
+    for (unsigned int m = 0; m < n_atoms; m++)
+    {
         s_prime(m)  = betas(m) + alphas(m,1) * log(T) + 2.0 * alphas(m,2) * T;
     }
 

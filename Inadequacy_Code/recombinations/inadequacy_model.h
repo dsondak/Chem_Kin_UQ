@@ -30,8 +30,10 @@ class inadequacy_model
     VectorXd cp_prime; // Specific heat for virtual species
     VectorXd s_prime;  // Entropy for virtual species
     VectorXd rj;       // Progress rate
-    //void thermo(MatrixXd alphas, VectorXd betas, double T);
-    void thermo(double T);
+    void calc_all_thermo(double T);
+    void calc_h_prime(double T);
+    void calc_cp_prime(double T);
+    void calc_s_prime(double T);
     void progress_rate(std::vector<double> Yinad, double T, double R, 
                        std::vector<double> delta_k);
 };
