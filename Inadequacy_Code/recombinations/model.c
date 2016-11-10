@@ -45,6 +45,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
+#include <algorithm>
 // GSL functions
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
@@ -154,7 +155,51 @@ int hydrogenFunction(double t, const double Y[], double dYdt[], void* params)
       Yinad[rxn.ProblemInfo.n_species + k - 2] = Y[(dim - 1) - n_atoms + k];
   }
 
-  rxn.inad_model.thermo(temperature);
+  // Compute catchall enthalpy and specific heat
+  rxn.inad_model.calc_h_prime(temperature);
+  rxn.inad_model.calc_cp_prime(temperature);
+
+  // Before computing catchall entropy, we need to 
+  // compute the entropy coefficients based off of the 
+  // constraints.  Let's do that right now.
+
+  double g1 = h_RT_minus_s_R[0]; // H2
+  double g2 = h_RT_minus_s_R[1]; // O2
+  double g3 = h_RT_minus_s_R[4]; // OH
+  double g4 = h_RT_minus_s_R[5]; // HO2
+  double g5 = h_RT_minus_s_R[6]; // H2O
+
+  double s1T;
+  double s2T;
+
+  s1T = rxn.inad_model.alphas(0,1) * log(temperature) + 2.0 * rxn.inad_model.alphas(0,2) * temperature;
+  s2T = rxn.inad_model.alphas(1,1) * log(temperature) + 2.0 * rxn.inad_model.alphas(1,2) * temperature;
+
+  std::vector<double> constraints(5, 0.0); // Vector of constraints
+
+  // First constraint
+  constraints[0] = -s1T + (rxn.inad_model.h_prime(0) - 0.5 * g1) / temperature;
+
+  // Directly impose constraint on \beta_1
+  rxn.inad_model.betas(0) = constraints[0] - rxn.inad_model.betas(0);
+
+  // Now we need to calculate the remaining constraints and determine which one 
+  // is the most strict
+  constraints[0] = -s2T + (rxn.inad_model.h_prime(1) - 0.5 * g2) / temperature;
+  constraints[1] = -rxn.inad_model.betas(0) - s1T - s2T + 
+          (rxn.inad_model.h_prime(0) + rxn.inad_model.h_prime(1) - g3) / temperature;
+  constraints[2] = 0.5 * (-rxn.inad_model.betas(0) - s1T - 2.0 * s2T + 
+                (rxn.inad_model.h_prime(0) + 2.0 * rxn.inad_model.h_prime(1) - g4) / temperature);
+  constraints[3] = -2.0 * rxn.inad_model.betas(0) - 2.0 * s1T - s2T + 
+          (2.0 * rxn.inad_model.h_prime(0) + rxn.inad_model.h_prime(1) - g5) / temperature;
+
+  double min_constraint = *std::min_element(constraints.begin(), constraints.end());
+
+  // Now we're ready to assign the second entropy coefficient
+  rxn.inad_model.betas(1) = min_constraint - rxn.inad_model.betas(1);
+
+  // And now compute the entropy
+  rxn.inad_model.calc_s_prime(temperature);
 
   // Set up s/R - h_RT for each species
   std::vector<double> delta_k(n_species_inad, 0.0);
@@ -266,8 +311,8 @@ void hydrogenComputeModel(
   
   // Pass parameters to GSL ODE solver
   double dt      = 1.0e-06; // initial time step size
-  double err_abs = 1.0e-16;  // Absolute error tolerance for adaptive stepping
-  double err_rel = 1.0e-16;   // Relative error tolerance for adaptive stepping
+  double err_abs = 1.0e-08;  // Absolute error tolerance for adaptive stepping
+  double err_rel = 1.0e-08;   // Relative error tolerance for adaptive stepping
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rkf45, dt, err_abs, err_rel);   
 
   // Initialize solution field
