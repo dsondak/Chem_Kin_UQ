@@ -126,7 +126,14 @@ double Likelihood<V, M>::lnValue(
       for (int i = 0; i < 3; i++)
       {
           // i < 4 b/c using quadratics for thermo-chemistry and +1 for betas
-          rxn->inad_model.alphas(k,i) = rxn->scale_factors[n_arr_params + 4 * k + i] * paramValues[n_arr_params + 4 * k + i];
+          if (i = 0)
+          {
+             rxn->inad_model.alphas(k,i) = rxn->scale_factors[n_arr_params + 4 * k + i] * paramValues[n_arr_params + 4 * k + i];
+          }
+          else
+          {
+             rxn->inad_model.alphas(k,i) = rxn->scale_factors[n_arr_params + 4 * k + i] * exp(paramValues[n_arr_params + 4 * k + i]);
+          }
       }
       // Note that these are not actually betas.  They are the gammas.  We'll create beta later (in model function).
       rxn->inad_model.betas(k) = rxn->scale_factors[n_arr_params + 4 * k + 3] * exp(paramValues[n_arr_params + 4 * k + 3]);
