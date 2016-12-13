@@ -1,0 +1,62 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\newcommand{\lr}[1]{\left(#1\right)}
+
+\begin{document}
+
+  \begin{abstract}
+    This short write-up contains terse details about the Jacobian for a chemical kinetics problem.  
+    It shows the basic forms and points out what is readily available in Antioch via automatic 
+    differentiation.
+  \end{abstract}
+
+  Let $\mathbf{y} = \left[\mathbf{x} \quad T\right]^{\mathrm{tr}}$ denote the solution at time $t$.  The 
+  species molar concentrations are $\mathbf{x}$ and the temperature of the mixture is $T$.  We denote 
+  a time derivative of a quantity by a dot, i.e. $\dot{\lr{ }}$.  Our system of equations is 
+  \begin{align}
+    \dot{\mathbf{y}} = \begin{bmatrix}\dot{\mathbf{x}} \\ \dot{T}\end{bmatrix} = 
+      \begin{bmatrix}\mathbf{f} \\ f_{T}\end{bmatrix} = \mathbf{g}.
+  \end{align}
+  The right-hand-side for the species equations ($\mathbf{f}$) is well-documented elsewhere.  This is 
+  what Antioch provides.  The right-hand-side for the energy equation is 
+  \begin{align}
+    f_{T} = \frac{-\mathbf{h}\lr{T}\cdot\mathbf{f} + Q}{\mathbf{c}_{p}\lr{T}\cdot\mathbf{x}}
+  \end{align}
+  where $\mathbf{h}\lr{T}$ and $\mathbf{c}_{p}\lr{T}$ are the enathalpies and specific heats of the 
+  species.  Antioch also provides these.  Note that $Q$ is a constant heating rate.
+
+  We need access to the Jacobian,
+  \begin{align}
+    J_{ij} = \frac{\partial g_{i}}{\partial y_{j}}, \qquad i = 1, \ldots, N+1, \quad j = 1, \ldots, N+1.
+  \end{align}
+  Antioch kindly provides the upper $N\times N+1$ block of the Jacobian ($N$ is the number of species, 
+  i.e. the length of $\mathbf{x}$).  We only need to figure out how to provide the last row of the 
+  Jacobian.  The first $N$ entries of the last row are given by 
+  \begin{align}
+    \frac{\partial f_{T}}{\partial x_{j}} = 
+      \frac{\displaystyle -\lr{\mathbf{c}_{p}\cdot\mathbf{x}}\lr{-\mathbf{h}\cdot\mathbf{J}\mathbf{e}_{j}} - 
+             \lr{\mathbf{h}\cdot\mathbf{f} + Q}\lr{\mathbf{c}_{p}\cdot\mathbf{e}_{j}}}
+           {\lr{\displaystyle \mathbf{c}_{p}\cdot\mathbf{x}}^{2}}
+  \end{align}
+  where $\mathbf{e}_{j}$ is the unit vector with unity in its $j$-th entry and zeros elsewhere.  All of 
+  the terms are readily available from Antioch.  The entry in the lower right hand corner of the 
+  Jacobian is 
+  \begin{align}
+    \frac{\partial f_{T}}{\partial T} = 
+      \frac{\displaystyle -\lr{\mathbf{c}_{p}\cdot\mathbf{x}}\left[\mathbf{h}
+              \cdot\frac{\partial \mathbf{f}}{\partial T} + \mathbf{f}\cdot\mathbf{c}_{p}\right] - 
+            \lr{-\mathbf{h}\cdot\mathbf{f} + Q}\lr{\mathbf{x}\cdot\frac{\partial \mathbf{c}_{p}}{\partial T}}}
+           {\displaystyle \lr{\mathbf{c}_{p}\cdot\mathbf{x}}^{2}}.
+  \end{align}
+\end{document}
