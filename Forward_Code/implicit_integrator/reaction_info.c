@@ -27,9 +27,11 @@ reaction_info::reaction_info(
     Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * thermo,
     Antioch::KineticsEvaluator<double> * kinetics,
     unsigned int species_from_user,
-    unsigned int inert_from_user,
+    unsigned int inert_from_user, 
+    unsigned int inad_from_user, 
     unsigned int equations_from_user,
-    unsigned int user_n_reactions)
+    unsigned int user_n_reactions, 
+    double user_Q)
 :
   Chem_mixture(chem_mixture),
   Reaction_set(reaction_set),
@@ -37,9 +39,11 @@ reaction_info::reaction_info(
   Kinetics(kinetics),
   n_species(species_from_user),
   n_inert(inert_from_user),
+  n_inad(inad_from_user), 
   n_eq(equations_from_user),
   n_reactions(user_n_reactions),
-  ProblemInfo(n_species, n_inert, n_eq, n_reactions)
+  Q(user_Q),
+  ProblemInfo(n_species, n_inert, n_inad, n_eq, n_reactions, Q)
 {
 }
 

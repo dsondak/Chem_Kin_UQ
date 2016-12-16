@@ -1,4 +1,3 @@
-#ANTIOCH_DIR := /workspace/dsondak/antioch_build
 ANTIOCH_DIR := /h1/dsondak/antioch_cp_derivs
 CVODE_DIR := /workspace/dsondak/sundials/install
 

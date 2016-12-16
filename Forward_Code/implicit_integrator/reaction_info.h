@@ -20,9 +20,11 @@ struct reaction_info {
       Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > * thermo,
       Antioch::KineticsEvaluator<double> * kinetics,
       unsigned int species_from_user,
-      unsigned int inert_from_user,
+      unsigned int inert_from_user, 
+      unsigned int inad_from_user, 
       unsigned int equations_from_user,
-      unsigned int user_n_reactions);
+      unsigned int user_n_reactions, 
+      double user_Q);
  ~reaction_info();
 
   Antioch::ChemicalMixture<double> * Chem_mixture;
@@ -31,8 +33,10 @@ struct reaction_info {
   Antioch::KineticsEvaluator<double> * Kinetics;
   unsigned int n_species;
   unsigned int n_inert;
+  unsigned int n_inad;
   unsigned int n_eq;
   unsigned int n_reactions;
+  double Q;
   problem_size ProblemInfo;
 };
 #endif

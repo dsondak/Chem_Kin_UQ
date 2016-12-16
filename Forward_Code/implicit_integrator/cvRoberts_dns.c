@@ -29,6 +29,9 @@
 #include <stdio.h>
 #include <vector>
 #include <iostream>
+#include <iterator>
+#include <fstream>
+#include <algorithm>
 
 // user defined functions
 #include "reaction_info.h"
@@ -74,10 +77,11 @@
 
 
 /* Problem Constants */
-#define RTOL  RCONST(1.0e-15)   /* scalar relative tolerance            */
+#define RTOL  RCONST(1.0e-08)  /* scalar relative tolerance            */
+#define ATOL  RCONST(1.0e-13)  /* scalar relative tolerance            */
 #define T0    RCONST(0.0)      /* initial time           */
-#define T1    RCONST(0.000001)  /* first output time      */
-#define DTOUT RCONST(0.000001)   /* output time factor     */
+#define T1    RCONST(0.000001) /* first output time      */
+#define DTOUT RCONST(0.000001) /* output time factor     */
 #define NOUT  50000            /* number of output times */
 
 
@@ -88,10 +92,6 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data);
 static int Jac(long int N, realtype t,
                N_Vector y, N_Vector fy, DlsMat J, void *user_data,
                N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
-
-/* Private functions to output results */
-
-static void PrintOutput(realtype t, realtype y1, realtype y2, realtype y3);
 
 /* Private function to print final statistics */
 
@@ -118,14 +118,31 @@ int main()
   y = abstol = NULL;
   cvode_mem = NULL;
 
-  const unsigned int n_species     = 7;
-  const unsigned int n_inert       = 1;
-  const unsigned int n_reactions   = 5;
-  const unsigned int n_species_tot = n_species + n_inert;
+  const unsigned int n_species        = 7;
+  const unsigned int n_inert          = 1;
+  const unsigned int n_inad           = 2;
+  const unsigned int n_reactions      = 5;
+  const unsigned int n_reactions_inad = 5;
+  const unsigned int n_species_tot    = n_species + n_inert + n_inad;
+  double             Q                = 5.0e+06; // Heating rate
 
   const unsigned int n_eq = n_species_tot + 1; // + 1 for temperature
 
-  create_file("implicit_test.h5", NOUT + 1, n_eq, 1);
+  // Now read in the time points
+  std::ifstream time_file("time_points.txt");
+  std::istream_iterator<double> start(time_file), end;
+  std::vector<double> time_points(start, end);
+  //if (time_file.is_open()) {
+  //   std::istream_iterator<double> start(time_file), end;
+  //   std::vector<double> time_points(start, end);
+  //}
+  //else {
+  //   std::cout << "time_points.txt could not be opened." << std::endl;
+  //}
+
+  //create_file("implicit.h5", NOUT + 1, n_eq, 1); // for writing out data
+  create_file("implicit_10pts.h5", time_points.size()+1, n_eq, 1); // for writing out data
+
 
   /* Create serial vector of length n_eq for I.C. and abstol */
   y = N_VNew_Serial(n_eq);
@@ -144,6 +161,8 @@ int main()
   species_str_list.push_back("HO2");
   species_str_list.push_back("H2O");
   species_str_list.push_back("N2");
+  species_str_list.push_back("Hp");
+  species_str_list.push_back("Op");
 
   // Get chemistry for species involved in this reaction
   Antioch::ChemicalMixture<double> chem_mixture( species_str_list );
@@ -155,13 +174,14 @@ int main()
   // Prepare for chemical reactions
   Antioch::ReactionSet    <double> reaction_set( chem_mixture );
   //Antioch::read_reaction_set_data_xml<double>( "five_rxn.xml", true, reaction_set );
-  Antioch::read_reaction_set_data_xml<double>( "detailed_rxn.xml", true, reaction_set );
+  Antioch::read_reaction_set_data_xml<double>( "inad_rxn.xml", true, reaction_set );
 
   // Set up reactions and thermodynamics 
   Antioch::KineticsEvaluator<double> kinetics(reaction_set, 0); // Reactions
   Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > thermo(nasa_mixture); // Thermodynamics
 
-  reaction_info rxnMain(&chem_mixture, &reaction_set, &thermo, &kinetics, n_species, n_inert, n_eq, n_reactions);
+  reaction_info rxnMain(&chem_mixture, &reaction_set, &thermo, &kinetics, n_species, n_inert, n_inad, 
+                        n_eq, n_reactions, Q);
 
   /* Initialize y */
   std::vector<double> concs(n_species_tot, 0.0);
@@ -176,9 +196,10 @@ int main()
   /* Set the scalar relative tolerance */
   reltol = RTOL;
   /* Set the vector absolute tolerance */
-  std::vector<double> atols(n_eq, 1.0e-16);
+  //std::vector<double> atols(n_eq, 1.0e-16);
   for (unsigned int i = 0; i < n_eq; i++) {
-      Ith(abstol,i+1) = atols[i];
+      //Ith(abstol,i+1) = atols[i];
+      Ith(abstol,i+1) = ATOL;
   }
 
   /* Call CVodeCreate to create the solver memory and specify the 
@@ -197,6 +218,22 @@ int main()
   flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
   if (check_flag(&flag, "CVodeSVtolerances", 1)) return(1);
 
+  /* Set stability limit detection algorithm */
+  flag = CVodeSetStabLimDet(cvode_mem, false); // Default is false
+  if (check_flag(&flag, "CVodeSVtolerances", 1)) return(1);
+
+  /* Set minimum time step size */
+  realtype hmin = 0.0;
+  flag = CVodeSetMinStep(cvode_mem, hmin);
+  if (check_flag(&flag, "CVodeSetMinStep", 1)) return(1);
+
+  /* Set maximum number of nonlinear solver iterations */
+  flag = CVodeSetMaxNonlinIters(cvode_mem, 10);
+  if (check_flag(&flag, "CVodeSetMaxNonlinIters", 1)) return(1);
+
+  flag = CVodeSetMaxNumSteps(cvode_mem, 100000);
+  if (check_flag(&flag, "CVodeSetMaxNumSteps", 1)) return(1);
+
   /* Call CVDense to specify the CVDENSE dense linear solver */
   flag = CVDense(cvode_mem, n_eq);
   if (check_flag(&flag, "CVDense", 1)) return(1);
@@ -205,6 +242,7 @@ int main()
   flag = CVDlsSetDenseJacFn(cvode_mem, Jac);
   if (check_flag(&flag, "CVDlsSetDenseJacFn", 1)) return(1);
 
+  /* Set user data */
   flag = CVodeSetUserData(cvode_mem, &rxnMain);
   if (check_flag(&flag, "CVodeSetUserData", 1)) return(1);
 
@@ -213,8 +251,10 @@ int main()
   printf(" \n5-species kinetics problem\n\n");
 
   /* Set up time and solution vectors */
-  std::vector<double> time(NOUT + 1, 0.0);
-  std::vector<double> solution(n_eq * (NOUT + 1) + 2, 0.0);
+  //std::vector<double> time(NOUT + 1, 0.0);
+  //std::vector<double> solution(n_eq * (NOUT + 1) + 2, 0.0);
+  std::vector<double> time(time_points.size() + 1, 0.0);
+  std::vector<double> solution(n_eq * (time_points.size() + 1) + 2, 0.0);
 
   /* Initialize time and solution vectors */
   time[0] = T0;
@@ -222,8 +262,15 @@ int main()
       solution[j] = Ith(y,j+1);
   }
 
-  for (unsigned int iout = 1; iout <= NOUT; iout++) {
-    realtype tout = iout * DTOUT;
+  //for (unsigned int iout = 1; iout <= NOUT; iout++) {
+  for (unsigned int iout = 1; iout < time_points.size()+1; iout++) {
+
+    //realtype tout = iout * DTOUT;
+    realtype tout = time_points[iout-1];
+
+    std::cout << "t = " << tout << std::endl;
+    //std::cout << "T = " << Ith(y,n_eq) << std::endl;
+
     flag = CVode(cvode_mem, tout, y, &t, CV_NORMAL);
 
     if (check_flag(&flag, "CVode", 1)) break;
@@ -237,14 +284,20 @@ int main()
 
   }
 
-  std::cout << "\nSuccessful Integration!!!\n" << std::endl;
+  if (flag == 0) {
+     std::cout << "\nSuccessful Integration!!!\n" << std::endl;
+  }
+  else {
+     std::cout << "\nUnsuccessful Integration.\n" << std::endl;
+  }
 
   /* Fake ignition data */
   //solution[n_eq * NOUT] = 1.0;
   //solution[n_eq * NOUT + 1] = 1000.0;
 
   /* Write solution to file */
-  write_file(time, solution, "implicit_test.h5", NOUT+1, n_eq, 0, 2.0, 5.0e+06);
+  //write_file(time, solution, "implicit.h5", NOUT+1, n_eq, 0, 2.0, 5.0e+06);
+  write_file(time, solution, "implicit_10pts.h5", time_points.size()+1, n_eq, 0, 2.0, 5.0e+06);
 
   /* Print some final statistics */
   PrintFinalStats(cvode_mem);
@@ -277,8 +330,9 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
 
   const unsigned int n_species     = rxn.ProblemInfo.n_species;
   const unsigned int n_inert       = rxn.ProblemInfo.n_inert;
+  const unsigned int n_inad        = rxn.ProblemInfo.n_inad;
   const unsigned int n_eq          = rxn.ProblemInfo.n_eq;
-  const unsigned int n_species_tot = n_species + n_inert;
+  const unsigned int n_species_tot = n_species + n_inert + n_inad;
 
   // Solution vector (units are moles)
   std::vector<double> molar_densities(n_species_tot,0);
@@ -323,16 +377,7 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
       cp_dot_species     += rxn.Thermo->cp(temp_cache, k) * molecular_weight * molar_densities[k];
   }
 
-  //Ith(ydot,n_eq) = (h_dot_mole_sources + rxn.ProblemInfo.Q) / cp_dot_species;
-  Ith(ydot,n_eq) = (-h_dot_mole_sources + 5.0e+06) / cp_dot_species;
-  //Ith(ydot,n_eq) = (-h_dot_mole_sources) / cp_dot_species;
-  //Ith(ydot,n_eq) = -10.0 * Ith(y,n_eq); // works
-  // Below code doesn't give oscillations
-  //double x_dot_x = 0.0;
-  //for (unsigned int k = 0; k < n_species_tot; k++) {
-  //    x_dot_x += molar_densities[k] * molar_densities[k];
-  //}
-  //Ith(ydot,n_eq) = sqrt(x_dot_x) * Ith(y,n_eq);
+  Ith(ydot,n_eq) = (-h_dot_mole_sources + rxn.ProblemInfo.Q) / cp_dot_species;
 
   return(0);
 }
@@ -350,8 +395,9 @@ static int Jac(long int N, realtype t,
 
   const unsigned int n_species     = rxn.ProblemInfo.n_species;
   const unsigned int n_inert       = rxn.ProblemInfo.n_inert;
+  const unsigned int n_inad        = rxn.ProblemInfo.n_inad;
   const unsigned int n_eq          = rxn.ProblemInfo.n_eq;
-  const unsigned int n_species_tot = n_species + n_inert;
+  const unsigned int n_species_tot = n_species + n_inert + n_inad;
 
   // Solution vector (units are moles)
   std::vector<double> molar_densities(n_species_tot,0);
@@ -431,28 +477,14 @@ static int Jac(long int N, realtype t,
           h_dot_J += rxn.Thermo->h(temp_cache, k) * molecular_weight * IJth(J,k+1,j+1);
       }
       num1 = -cp_dot_species * h_dot_J;
-      num2 = (-h_dot_mole_sources + 5.0e+06) * rxn.Thermo->cp(temp_cache, j);
-      //num2 = (h_dot_mole_sources) * rxn.Thermo->cp(temp_cache, j);
+      num2 = (-h_dot_mole_sources + rxn.ProblemInfo.Q) * rxn.Thermo->cp(temp_cache, j);
       IJth(J,n_eq, j+1) = (num1 - num2) / cp_dot_species_2;
   }
 
   // Energy RHS derivative wrt temperature
   num1 = cp_dot_species * (h_dot_J_T + cp_dot_mole_sources);
-  num2 = (-h_dot_mole_sources + 5.0e+06) * dcp_dT_dot_species;
-  //num2 = (h_dot_mole_sources) * dcp_dT_dot_species;
+  num2 = (-h_dot_mole_sources + rxn.ProblemInfo.Q) * dcp_dT_dot_species;
   IJth(J,n_eq,n_eq) = (num1 - num2) / cp_dot_species_2;
-
-  //IJth(J,n_eq,n_eq) = -10.0; // works
-
-  // No oscillations with code below
-  //double x_dot_x = 0.0;
-  //for (unsigned int k = 0; k < n_species_tot; k++) {
-  //    x_dot_x += molar_densities[k] * molar_densities[k];
-  //}
-  //for (unsigned int k = 0; k < n_species_tot; k++) {
-  //    IJth(J,n_eq,k+1) =  molar_densities[k] * Ith(y,n_eq) / sqrt(x_dot_x);
-  //}
-  //IJth(J,n_eq,n_eq) = sqrt(x_dot_x);
 
   return(0);
 }
@@ -462,19 +494,6 @@ static int Jac(long int N, realtype t,
  * Private helper functions
  *-------------------------------
  */
-
-static void PrintOutput(realtype t, realtype y1, realtype y2, realtype y3)
-{
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-  printf("At t = %0.4Le      y =%14.6Le  %14.6Le  %14.6Le\n", t, y1, y2, y3);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-  printf("At t = %0.4e      y =%14.6e  %14.6e  %14.6e\n", t, y1, y2, y3);
-#else
-  printf("At t = %0.4e      y =%14.6e  %14.6e  %14.6e\n", t, y1, y2, y3);
-#endif
-
-  return;
-}
 
 /* 
  * Get and print some final statistics

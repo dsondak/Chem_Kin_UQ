@@ -4,7 +4,7 @@
   <!-- phase gri30     -->
   <phase id="gri30">
     <speciesArray datasrc="#species_data">
-      H O OH H2 O2 H2O HO2 H2O2 N2 
+      H O OH H2 O2 H2O HO2 H2O2 N2 Hp Op
     </speciesArray>
   </phase>
 
@@ -154,6 +154,39 @@
         </NASA>
       </thermo>
     </species>
+
+    <!-- species H'   -->
+    <species name="Hp">
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.64243522, 2.89759059E-04, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, -4.69510297E+00, -11.14833393E+00
+           </floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.64243522, 2.89759059E-04, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, -4.69510297E+00, -11.14833393E+00
+           </floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species O'   -->
+    <species name="Op">
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.64243522, 2.89759059E-04, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, -4.69510297E+00, -14.46768276E+00
+           </floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.64243522, 2.89759059E-04, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00, -4.69510297E+00, -14.46768276E+00
+           </floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
 
   </speciesData>
 

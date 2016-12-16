@@ -19,13 +19,17 @@
 
 problem_size::problem_size (unsigned int n_species_from_user, 
                             unsigned int inert_from_user, 
+                            unsigned int inad_from_user, 
                             unsigned int equations_from_user, 
-                            unsigned int user_n_reactions)
+                            unsigned int user_n_reactions, 
+                            double user_Q)
 :
     n_species(n_species_from_user), // set n_species = n_species_from_user
-    n_inert(inert_from_user),
+    n_inert(inert_from_user), 
+    n_inad(inad_from_user), 
     n_eq(equations_from_user),
-    n_reactions(user_n_reactions)
+    n_reactions(user_n_reactions),
+    Q(user_Q)
 {
 }
 
