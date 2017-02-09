@@ -17,25 +17,26 @@ LIBS := \
 LINKFLAGS = -Wl,-rpath,/workspace/dsondak/sundials_gdb/install_gdb/lib
 
 CXX = g++
-CXXFLAGS += -g -O0 -Wall -c -std=c++0x
+#CXXFLAGS += -g -O0 -Wall -c -std=c++0x
+CXXFLAGS += -O3 -Wall -c -std=c++11
 
-default: cvRoberts_dns
+default: cvRoberts_dns_eigs
 
 .SUFFIXES: .o .C
 
-all:	cvRoberts_dns
+all:	cvRoberts_dns_eigs
 
 clean:
 	rm -f *~
 	rm -f *.o
-	rm -f cvRoberts_dns
+	rm -f cvRoberts_dns_eigs
 
-cvRoberts_dns: cvRoberts_dns.o reaction_info.o problem_size.o write_data.o
-	$(CXX) cvRoberts_dns.o \
+cvRoberts_dns_eigs: cvRoberts_dns_eigs.o reaction_info.o problem_size.o write_data.o
+	$(CXX) cvRoberts_dns_eigs.o \
 	       reaction_info.o \
                problem_size.o \
 	       write_data.o \
-	       -o cvRoberts_dns $(LIBS) ${LINKFLAGS}
+	       -o cvRoberts_dns_eigs $(LIBS) ${LINKFLAGS}
 
 %.o: %.c
 	$(CXX) $(INC_PATHS) $(CXXFLAGS) $<
