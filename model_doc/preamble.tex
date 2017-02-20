@@ -1,4 +1,5 @@
-\usepackage[bottom=10em]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
+%\usepackage[bottom=10em]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
+\usepackage[margin=1.0in]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
 
 \usepackage[english]{babel} % English language
 \usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
@@ -71,6 +72,7 @@
 %----------------------------------------------------------------------------------------
 %       NEW COMMANDS
 %----------------------------------------------------------------------------------------
+\newcommand{\dls}[1]{\textcolor{red!75!black}{#1}}
 
 \newcommand{\lr}[1]{\left(#1\right)}
 \newcommand{\pdeone}[2]{\frac{\partial #1}{\partial #2}}
@@ -115,6 +117,12 @@
 \newcommand{\xir}[1]{x_{#1}^{R}}
 \newcommand{\xk}[1]{x_{#1}}
 \newcommand{\rrk}[1]{\dot{\omega}_{#1}}
+\renewcommand{\time}{\mathrm{t}}
+
+\newcommand{\totmoleconc}{\rho_{_{X}}} 
+\newcommand{\molefrac}[1]{x^{f}_{#1}}
+\newcommand{\moleconc}[1]{\left[x_{#1}\right]}
+\newcommand{\heatrate}{\dot{Q}}
 
 \newcommand{\Sop}{\boldsymbol{\mathcal{S}}}
 \newcommand{\rrc}{\dot{\boldsymbol{\upsilon}}}

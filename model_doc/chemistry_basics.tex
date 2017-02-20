@@ -1,0 +1,53 @@
+\section{Basic Chemistry Notes}
+
+Within the mixture, assume that each species obeys the 
+ideal gas law so that 
+\begin{align}
+  p_{k} = \frac{\rho_{k}RT}{W_{k}}
+\end{align}
+where $p_{k}$ is the pressure of speices $k$, 
+$\rho_{k}$ is the density of species $k$, $W_{k}$ 
+is the molecular weight of species $k$, $R$ is the 
+universal gas contant and $T$ is the temperature of the 
+mixture.  The thermodynamic pressure of the mixture is 
+\begin{align*}
+  p &= \sum_{k=1}^{N}{p_{k}} \\
+    &= \sum_{k=1}^{N}{\frac{\rho_{k}}{W_{k}}}RT \\
+    &= \sum_{k=1}^{N}{\frac{\rho Y_{k}}{W_{k}}RT} \\
+    &= \rho R T \sum_{k=1}^{N}{\frac{Y_{k}}{W_{k}}} \\
+    &= \frac{\rho R T}{W}
+\end{align*}
+where the relations 
+\begin{align}
+  \rho_{k} = \rho Y_{k} \qquad \text{and} \qquad 
+  \frac{1}{W} = \sum_{k=1}^{N}{\frac{Y_{k}}{W_{k}}}
+\end{align}
+where used.  Note that $Y_{k}$ denotes the mass 
+fraction of species $k$.
+
+We can play additional games with the ideal gas 
+relationship.  These games will shed light on 
+some annoying nomenclature that arises frequently 
+when considering three-body reactions.  Note that 
+\begin{align}
+  \frac{\rho}{W} &= \sum_{k=1}^{N}{\frac{\rho Y_{k}}{W_{k}}} \\
+                 &= \sum_{k=1}^{N}{\left[X_{k}\right]}
+\end{align}
+where $X_{k} = \dfrac{\rho Y_{k}}{W_{k}}$ is the molar 
+concentration of species $k$.  The ideal gas law therefore 
+becomes 
+\begin{align}
+  p = \sum_{k=1}^{N}{\left[X_{k}\right]}RT.
+\end{align}
+Note that the thermodynamic pressure is directly 
+proportional to the molar concentrations.  In 
+three-body reactions, the concentration of the 
+``third body'', \ce{M} is usually written as a linear 
+combination of each species in the mixture.  That is 
+\begin{align}
+  \left[\ce{M}\right] = \sum_{k=1}^{N}{\left[X_{k}\right]}.
+\end{align}
+Hence, when the literature states that it is equivalent 
+to consider the concentration of the third body or 
+pressure this is what they mean.
+

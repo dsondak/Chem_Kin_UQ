@@ -1,27 +1,194 @@
 \section{Governing Equations}
+We consider a perfectly stirred reactor at constant pressure but 
+allow the volume to change.  The gas mixture in the chamber 
+follows the ideal gas law 
+\begin{align}
+  pV = x R T \label{eq:ideal_gas_law}
+\end{align}
+where $p$ is the constant reactor pressure, $V = V\lr{t}$ is 
+the volume of the reactor, $X$ represents the total amount 
+of moles in the system, $R$ is the ideal gas constant and 
+$T$ is the temperature of the mixture.  We consider a mixture 
+of $N$ species undergoing $M$ reactions.  Hence, the total 
+moles in the system is given by 
+\begin{align}
+  X = \sum_{k=1}^{N}{x_{k}}
+\end{align}
+where $x_{k}$ is the number of moles of species $k$.  We wish 
+to determine the rate of change of the number of moles for 
+each species.  We introduce the total molar concentration 
+$\totmoleconc$, the molar fraction of species $k$, $\molefrac{k}$, 
+and the molar concentration of species $k$, $\moleconc{k}$.  The 
+rate of change of the molar concentration of species $k$ is 
+then given by 
+\begin{align}
+  \odeone{\lr{\totmoleconc\molefrac{k}}}{\time} = \rrk{k}.
+\end{align}
+Integrating over the volumen $V\lr{t}$ and using the Leibnitz 
+rule (a.k.a. the Reynolds transport theorem) we find 
+\begin{align}
+  \odeone{}{\time}\int_{V\lr{\time}}{\totmoleconc\molefrac{k} \ \mathrm{d}V} - 
+     \int_{\partial V\lr{\time}}{\totmoleconc\molefrac{k}\mathbf{v}_{b}\cdot\mathbf{n} \ \mathrm{d}S}
+     = 
+     \rrk{k}V\lr{\time}
+\end{align}
+where $\mathbf{v}_{b}$ is the velocity of the boundary and $S$ is 
+the bounding surface.  The second term on the left hand side is 
+zero because there is no surface flux in our system.  Hence 
+\begin{align}
+  \odeone{\lr{\totmoleconc\molefrac{k}V}}{\time} = 
+     \rrk{k}V\lr{\time}.
+\end{align}
+Of course $\totmoleconc\molefrac{k} = \moleconc{k}$.  Therefore, 
+after expanding the time derivative, we obtain 
+\begin{align}
+  \odeone{\moleconc{k}}{\time} = \rrk{k} - 
+    \moleconc{k}\frac{1}{V\lr{\time}}\odeone{V}{\time}
+  \label{eq:mole_conc_evo_V}.
+\end{align}
+Equation~\eqref{eq:mole_conc_evo_V} can be derived starting 
+from change in total system mass and then converting to 
+molar units.  However, since the present work is done in terms 
+of moles, we elected to work with moles from the outset.
 
-\subsection{Evolution of Species and Temperature}
-A detailed chemical mechanism consists of a set of $\nrd$ reactions involving $\nsd$ species.  
-Let $\xd = \left[x_{1}^{D}, \ldots, x_{\nsd}^{D}\right]^{\dagger} \in \mathbb{R}^{\nsd}$ denote 
-a vector of species in the detailed model.  Then a set of coupled ODEs governing the evolution 
-of each species and temperature is
+The energy equation can also be derived 
+(\dls{details not shown here yet}).  It turns out to be 
 \begin{align}
-  \odeone{\xd}{t} &= \rrd \\
-  \odeone{T}{t}   &= \frac{\displaystyle -\hd\lr{T}\cdot\odeone{\xd}{t} + \dot{\mathcal{Q}}}{\displaystyle \cpd\lr{T}\cdot\xd}
+  \odeone{T}{\time} = \frac{\displaystyle 
+     -\sum_{k=1}^{N}{h_{k}W_{k}\rrk{k}} + \dfrac{\heatrate}{V}}
+  {\displaystyle \sum_{k=1}^{N}{c_{p,k}W_{k}\moleconc{k}}}
 \end{align}
-where $\dot{\mathcal{Q}}$ is a heating rate and $\cpd\lr{T}$ is the specific heat at constant 
-pressure.  Note that
+where $\heatrate$ is a user-provided heating rate.
+
+The species concentration equation can be rearranged 
+considerably.  Primarily, the volume time-derivative 
+must be dealt with.  To do so, we consider the ideal gas 
+law~\eqref{eq:ideal_gas_law}.  Solving for the volume we 
+have 
 \begin{align}
-  \cpd\lr{T} = \left.\pdeone{\hd}{T}\right|_{p}
+  V\lr{\time} = \frac{X R T}{p}.
 \end{align}
-where $\hd$ is the enthalpy of the detailed model.  In general, we denote the enthalpy by $h$ 
-and the specific heat at constant pressure by $c_{p}$.
+The time-derivative is 
+\begin{align}
+  \odeone{V}{\time} = \frac{X R}{p}\odeone{T}{\time}.
+  \label{eq:dVdt}
+\end{align}
+It follows that 
+\begin{align}
+  \frac{1}{V}\odeone{V}{\time} = \frac{R}{p}\odeone{T}{\time} 
+       \sum_{k=1}^{N}{\moleconc{k}}
+\end{align}
+or in another way (using~\eqref{eq:ideal_gas_law}) 
+\begin{align}
+  \frac{1}{V}\odeone{V}{\time} = \frac{1}{T}\odeone{T}{\time}.
+\end{align}
+Using the volume time-derivative in~\eqref{eq:mole_conc_evo_V} 
+we obtain 
+\begin{align}
+  \odeone{\moleconc{k}}{\time} = \rrk{k} - 
+    \frac{1}{T}\odeone{T}{\time}\moleconc{k}
+  \label{eq:mole_conc_evo}.
+\end{align}
+
+\subsection{Some Additional Notes}
+In deriving the above evolution equations, we worked in 
+molar units.  However, most combustion people seem to 
+think in terms of mass units.  Hence, the ideal gas law 
+is typically written as 
+\begin{align}
+  p = \rho \frac{R}{W} T
+\end{align}
+where $W$ is the mean molecular weight of the mixture, 
+$\rho = m / V$ is the density of the mixture and $m$ is 
+the total mass of the mixture.  The volume is then given 
+by 
+\begin{align}
+  V = \frac{m R T}{W p}
+\end{align}
+and the time-derivative of volume is 
+\begin{align}
+  \odeone{V}{\time} = \frac{m R}{p} 
+    \left[\frac{1}{W}\odeone{T}{\time} - 
+    \frac{T}{W^{2}}\odeone{W}{\time}\right].
+  \label{eq:dVdt_mass}
+\end{align}
+If the mean molecular weight was constant in time, 
+then~\eqref{eq:dVdt_mass} would be similar to~\eqref{eq:dVdt}. 
+To see that the mean molecular weight is indeed constant 
+in time we consider the definition of $W$ in terms of 
+the mole fraction, 
+\begin{align}
+  W = \sum_{k=1}^{N}{W_{k}\molefrac{k}}.
+\end{align}
+Then 
+\begin{align}
+  \odeone{W}{\time} &= 
+    \sum_{k=1}^{N}{W_{k}\odeone{\molefrac{k}}{\time}} \\
+    &= \sum_{k=1}^{N}{\frac{W_{k}}{X}\odeone{x_{k}}{\time}} \\
+    &= \frac{1}{X}\sum_{k=1}^{N}{W_{k}\odeone{}{\time}\lr{V \moleconc{k}}} \\
+    &= \frac{V}{X}\sum_{k=1}^{N}{W_{k}\rrk{k}} \\
+    &= 0.
+\end{align}
+The last line is possible due to conservation of mass.  
+Conservation of mass is expressed as 
+\begin{align}
+  \sum_{k=1}^{N}{W_{k}\nu_{kj}} = 0, \qquad \forall \ j.
+\end{align}
+Thus,
+\begin{align}
+  \sum_{k=1}^{N}{W_{k}\rrk{k}} = 
+    \sum_{j=1}^{M}{q_{j}\lr{\sum_{k=1}^{N}W_{k}\nu_{kj}}} = 0.
+\end{align}
+Hence,~\eqref{eq:dVdt_mass} becomes 
+\begin{align}
+  \odeone{V}{\time} = \frac{m}{W}\frac{R}{p}\odeone{T}{\time}.
+  \label{eq:dVdt_mass_Wconst}
+\end{align}
+We can write~\eqref{eq:dVdt_mass_Wconst} in terms of the total 
+moles to recover~\eqref{eq:dVdt} using the relation $m = X W$. 
+To see that this relation is true we have 
+\begin{align}
+  m &= \sum_{k=1}^{N}{mY_{k}} \\
+    &= \sum_{k=1}^{N}{m\frac{W_{k}}{\rho}\moleconc{k}} \\
+    &= \sum_{k=1}^{N}{W_{k}V\moleconc{k}} \\
+    &= \sum_{k=1}^{N}{W_{k}x_{k}} \\
+    &= X\sum_{k=1}^{N}{W_{k}\molefrac{k}} \\
+    &= X W.
+\end{align}
+
+
+
 Two other useful relations are
 \begin{align}
   h\lr{T} &= \int{c_{p}\lr{T} \ \mathrm{d}T} \label{eq:h_cp_rel} \\
   s\lr{T} &= \int{\frac{c_{p}}{T} \ \mathrm{d}T} \label{eq:s_cp_rel}
 \end{align}
 where $s\lr{T}$ is the entropy.
+
+
+
+%\subsection{Evolution of Species and Temperature}
+%A detailed chemical mechanism consists of a set of $\nrd$ reactions involving $\nsd$ species.  
+%Let $\xd = \left[x_{1}^{D}, \ldots, x_{\nsd}^{D}\right]^{\dagger} \in \mathbb{R}^{\nsd}$ denote 
+%a vector of species in the detailed model.  Then a set of coupled ODEs governing the evolution 
+%of each species and temperature is
+%\begin{align}
+%  \odeone{\xd}{t} &= \rrd \\
+%  \odeone{T}{t}   &= \frac{\displaystyle -\hd\lr{T}\cdot\odeone{\xd}{t} + \dot{\mathcal{Q}}}{\displaystyle \cpd\lr{T}\cdot\xd}
+%\end{align}
+%where $\dot{\mathcal{Q}}$ is a heating rate and $\cpd\lr{T}$ is the specific heat at constant 
+%pressure.  Note that
+%\begin{align}
+%  \cpd\lr{T} = \left.\pdeone{\hd}{T}\right|_{p}
+%\end{align}
+%where $\hd$ is the enthalpy of the detailed model.  In general, we denote the enthalpy by $h$ 
+%and the specific heat at constant pressure by $c_{p}$.
+%Two other useful relations are
+%\begin{align}
+%  h\lr{T} &= \int{c_{p}\lr{T} \ \mathrm{d}T} \label{eq:h_cp_rel} \\
+%  s\lr{T} &= \int{\frac{c_{p}}{T} \ \mathrm{d}T} \label{eq:s_cp_rel}
+%\end{align}
+%where $s\lr{T}$ is the entropy.
 
 \subsection{Reaction Rates}
 The reaction rate for species $k$ is given by 

@@ -45,11 +45,12 @@
   Jacobian.  The first $N$ entries of the last row are given by 
   \begin{align}
     \frac{\partial f_{T}}{\partial x_{j}} = 
-      \frac{\displaystyle -\lr{\mathbf{c}_{p}\cdot\mathbf{x}}\lr{-\mathbf{h}\cdot\mathbf{J}\mathbf{e}_{j}} - 
-             \lr{\mathbf{h}\cdot\mathbf{f} + Q}\lr{\mathbf{c}_{p}\cdot\mathbf{e}_{j}}}
+      \frac{\displaystyle -\lr{\mathbf{c}_{p}\cdot\mathbf{x}}\lr{\mathbf{h}\cdot\mathbf{J}\mathbf{e}_{j}} - 
+             \lr{-\mathbf{h}\cdot\mathbf{f} + Q}\lr{\mathbf{c}_{p}\cdot\mathbf{e}_{j}}}
            {\lr{\displaystyle \mathbf{c}_{p}\cdot\mathbf{x}}^{2}}
   \end{align}
-  where $\mathbf{e}_{j}$ is the unit vector with unity in its $j$-th entry and zeros elsewhere.  All of 
+  where $\mathbf{e}_{j}$ is the unit vector of length $N$  with unity in its $j$-th entry and zeros elsewhere.  
+  Note that $\mathbf{J}$ represents the upper $N\times N$ block of the Jacobian. All of 
   the terms are readily available from Antioch.  The entry in the lower right hand corner of the 
   Jacobian is 
   \begin{align}
