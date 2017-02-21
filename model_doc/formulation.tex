@@ -1,0 +1,105 @@
+\documentclass[fontsize=12pt, % Document font size
+               paper=a4, % Document paper type
+               hyperref]{report}
+
+\input{preamble}
+
+\begin{document}
+
+\title{\textcolor{titleblue}{Kinetics Formulation} \\[1cm]}
+
+\author{David Sondak}
+\date{} % No date by default, add \today if you wish to include the publication date
+
+\maketitle % Title page
+
+\newpage % Start lab look on a new page
+
+\pagestyle{scrheadings} % Begin using headers
+
+\section{Kinetics Formulation}
+We consider a perfectly stirred reactor at constant pressure but 
+allow the volume to change.  The gas mixture in the chamber 
+is assumed to follow the ideal gas law 
+\begin{align}
+  pV = X R T \label{eq:ideal_gas_law}
+\end{align}
+where $p$ is the constant reactor pressure, $V = V\lr{t}$ is 
+the volume of the reactor, $X$ represents the total moles in 
+the mixture, $R$ is the ideal gas constant and $T$ is the 
+temperature of the mixture.  We consider a mixture of $N$ 
+species undergoing $M$ reactions.  Note that the total 
+moles in the mixture is simply the sum of the moles of each 
+species, 
+\begin{align}
+  X = \sum_{k=1}^{N}{\moles{k}}.
+\end{align}
+
+The total moles of each species evolves according to 
+\begin{align}
+  \odeone{\moles{k}}{\time} = \rrk{k}V.
+\end{align}
+The energy equation can be written as 
+\begin{align}
+  \odeone{T}{\time} = \frac{-\h\cdot\rrk{k} V + \heatrate}{\cp\cdot\x}
+\end{align}
+where $\h$ is the enthalpy in molar units, $\cp$ is the specific 
+heat at constant pressure (also in molar units), $\heatrate$ 
+is the user-supplied heating rate (a constant in what follows), 
+and $\x$ is the number of moles of each species. 
+
+\subsection{Jacobian}
+Before presenting the Jacobian, we introduce two quantities 
+that will appear in the Jacobian.  These are 
+\begin{align}
+  \pdeone{V}{x_{j}} = \frac{R T}{p}\mathbf{1}_{j}, \qquad 
+  \pdeone{V}{T} = \frac{R X}{p}.
+\end{align}
+where $\mathbf{1}_{j}$ is a row vector of $N$ ones.
+
+The system of equations can be written as 
+\begin{align}
+  \begin{bmatrix}
+    \displaystyle \odeone{\x}{\time} \\[1.0em] \displaystyle \odeone{T}{\time} 
+  \end{bmatrix}
+  = 
+  \begin{bmatrix}
+    \mathbf{f} \\ f_{_{T}}.
+  \end{bmatrix}
+\end{align}
+
+The Jacobian matrix consists of four blocks.  We write 
+\begin{align}
+  \mathbf{J} = 
+  \begin{bmatrix}
+    \displaystyle \pdeone{\mathbf{f}}{\x} & \displaystyle \pdeone{\mathbf{f}}{T} \\[1.0em]
+    \displaystyle \pdeone{f_{_{T}}}{\x} & \displaystyle \pdeone{f_{_{T}}}{T}
+  \end{bmatrix}.
+\end{align}
+The upper $N \times N + 1$ block of the Jacobian is given by  
+\begin{align}
+  \pdeone{f_{k}}{x_{j}} &= \pdeone{\rrk{k}}{x_{j}}V + \rrk{k}\pdeone{V}{x_{j}} \\
+  \pdeone{f_{k}}{T} &= \pdeone{\rrk{k}}{T}V + \rrk{k}\pdeone{V}{T}.
+\end{align}
+The lower $1 \times N + 1$ block of the Jacobian is given by 
+\begin{align}
+  \pdeone{f_{_{T}}}{x_{j}} &= 
+    \frac{\displaystyle -\lr{\cp\cdot\x}\left[\h\cdot\mathbf{J}_{\omega}\mathbf{e}_{j}V + 
+           \lr{\h\cdot\rr}\pdeone{V}{x_{j}}\right] - \left[-\h\cdot\rr V + 
+           \heatrate\right]\lr{\cp\cdot\mathbf{e}_{j}}}{\displaystyle \lr{\cp\cdot\x}^{2}} \\
+  \pdeone{f_{_{T}}}{T} &= 
+  \frac{\displaystyle -\lr{\cp\cdot\x}\left[\h\cdot\lr{\rr\pdeone{V}{T} + 
+             \pdeone{\rr}{T}V} + \cp\cdot\rr V\right] - 
+        \left[-\h\cdot\rr V + \heatrate\right]\lr{\pdeone{\cp}{T}\cdot\x}}
+       {\displaystyle \lr{\cp\cdot\x}^{2}}.
+\end{align}
+Note that 
+\begin{align}
+  \mathbf{J}_{\omega} = \pdeone{\rr}{\x}
+\end{align}
+and $\mathbf{e}_{j}$ is as vector with $N$ entries containing all 
+zeros except at entry $j$ which has value $1$.
+
+\end{document}
+
+
