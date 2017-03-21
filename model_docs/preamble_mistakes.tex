@@ -1,0 +1,193 @@
+%\usepackage[bottom=10em]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
+\usepackage[margin=1.0in]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
+
+\usepackage[english]{babel} % English language
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+
+\usepackage[utf8]{inputenc} % Uses the utf8 input encoding
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+
+%\usepackage[osf]{mathpazo} % Palatino as the main font
+%\linespread{1.05}\selectfont % Palatino needs some extra spacing, here 5% extra
+%\usepackage[scaled=.88]{beramono} % Bera-Monospace
+%\usepackage[scaled=.86]{berasans} % Bera Sans-Serif
+%\usepackage[euler-digits]{eulervm}
+
+\usepackage{booktabs,array} % Packages for tables
+
+\usepackage{amsmath, amsfonts} % For typesetting math
+\usepackage{graphicx} % Required for including images
+\usepackage{etoolbox}
+\usepackage[norule]{footmisc} % Removes the horizontal rule from footnotes
+\usepackage{lastpage} % Counts the number of pages of the document
+\usepackage{xifthen}
+
+%\usepackage{natbib}
+
+\usepackage[dvipsnames]{xcolor}  % Allows the definition of hex colors
+\definecolor{titleblue}{rgb}{0.16,0.24,0.64} % Custom color for the title on the title page
+%\definecolor{linkcolor}{rgb}{0,0,0.42} % Custom color for links - dark blue at the moment
+\definecolor{linkcolor}{RGB}{155,0,0}
+\definecolor{citecolor}{RGB}{0,100,115}
+\definecolor{urlcolor}{RGB}{89,22, 175}
+%\definecolor{linkcolor}{red!50!black}
+%\definecolor{citecolor}{blue!50!black}
+%\definecolor{urlcolor}{blue!80!black}
+
+\DeclareFixedFont{\textcap}{T1}{phv}{bx}{n}{1.5cm} % Font for main title: Helvetica 1.5 cm
+\DeclareFixedFont{\textaut}{T1}{phv}{bx}{n}{0.8cm} % Font for author name: Helvetica 0.8 cm
+
+\usepackage[nouppercase,headsepline]{scrpage2} % Provides headers and footers configuration
+\pagestyle{scrheadings} % Print the headers and footers on all pages
+\clearscrheadfoot % Clean old definitions if they exist
+
+\automark[chapter]{chapter}
+\ohead{\headmark} % Prints outer header
+
+\setlength{\headheight}{25pt} % Makes the header take up a bit of extra space for aesthetics
+\setheadsepline{.4pt} % Creates a thin rule under the header
+
+\ofoot[\normalfont\normalcolor{\thepage\ |\  \pageref{LastPage}}]{\normalfont\normalcolor{\thepage\ |\  \pageref{LastPage}}} % Creates an outer footer of: "current page | total pages"
+
+% For color boxes
+\usepackage{tcolorbox}
+
+% For chemistry
+\usepackage{mhchem}
+
+% Hyperlink configuration
+\usepackage[
+    pdfauthor={}, % Your name for the author field in the PDF
+    pdftitle={Laboratory Journal}, % PDF title
+    pdfsubject={}, % PDF subject
+    bookmarksopen=true,
+    linktocpage=true,
+    urlcolor=linkcolor, % Color of URLs
+    citecolor=linkcolor, % Color of citations
+    linkcolor=linkcolor, % Color of links to other pages/figures
+    backref=page,
+    pdfpagelabels=true,
+    plainpages=false,
+    colorlinks=true, % Turn off all coloring by changing this to false
+    bookmarks=true,
+    pdfview=FitB]{hyperref}
+
+\usepackage[stretch=10]{microtype} % Slightly tweak font spacing for aesthetics
+
+%\setlength\parindent{0pt} % Uncomment to remove all indentation from paragraphs
+
+%----------------------------------------------------------------------------------------
+%       NEW COMMANDS
+%----------------------------------------------------------------------------------------
+% Convenience Macros
+\newcommand{\KL}{Karhunen-Lo\`{e}ve}
+
+% Comments
+\newcommand{\dls}[1]{\textcolor{red}{DLS: #1}} % Comments from David
+
+\newcommand{\commentout}[1]{}
+
+% General math operators
+\newcommand{\lr}[1]{\left(#1\right)}  % Left-right parentheses
+\newcommand{\pdeone}[2]{\frac{\partial #1}{\partial #2}} % First partial derivative
+\newcommand{\pden}[3]{\frac{\partial^{#3} #1}{\partial #2^{#3}}} % n-th order partial derivative (user specifies n)
+\newcommand{\odeone}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}} % First order ordinary derivative
+\newcommand{\oden}[3]{\frac{\mathrm{d}^{#3} #1}{\mathrm{d} #2^{#3}}}  % n-th order ordinary derivative (user specifies n)
+\renewcommand{\div}{\nabla\cdot} % Divergence operator
+\newcommand{\dx}[1]{\ \mathrm{d}#1} % Differential in integral
+\renewcommand{\time}{\mathrm{t}} % Time variable
+\newcommand{\tr}{\mathrm{tr}} % Transpose operation
+\newcommand{\mean}[1]{\overline{#1}} % Mean of a quantity
+\newcommand{\ave}[1]{\left<#1\right>} % Average operator
+\newcommand{\Nl}{N_{\ell}} % Number of Legendre modes
+\newcommand{\ev}[1][]{%
+  \ifthenelse{\equal{#1}{}}{\lambda}{\lambda_{#1}}
+} % Eigenvalues
+\newcommand{\efk}[1]{\varphi_{#1}} % Eigenmodes (index notation)
+\newcommand{\ef}[1]{\boldsymbol{\varphi}_{#1}} % Eigenmodes (vector)
+
+% Fluids operators
+\newcommand{\vel}{\mathbf{u}} % Velocity vector
+\newcommand{\stress}{\boldsymbol{\tau}} % Stress tensor in momentum equation
+\newcommand{\diffvel}{\mathbf{V}} % Diffusion velocity
+\newcommand{\Yk}[1]{Y_{#1}} % Species mass fraction
+\newcommand{\grav}{\mathbf{g}} % Force of gravity
+\newcommand{\fa}[1]{\widetilde{#1}} % Favre average
+\newcommand{\ff}[1]{#1^{\prime\prime}} % Favre fluctuations
+\newcommand{\ra}[1]{\bar{#1}} % Reynolds average
+\newcommand{\diss}{\epsilon} % Dissipation
+\newcommand{\Ceo}{C_{\diss 1}} % First dissipation coefficient
+\newcommand{\Cet}{C_{\diss 2}} % Second dissipation coefficient
+\newcommand{\Stk}{S_{kT}} % Turbulent Schmidt number of species k
+\newcommand{\Y}{\mathbf{Y}} % Vector of species mass fractions
+\newcommand{\chist}{\chi_{\mathrm{st}}} % Stoichometric scalar dissipation
+
+% Kinetics operators
+\newcommand{\Wk}{W_{k}} % Molecular weight
+\newcommand{\rrk}[1]{\dot{\omega}_{#1}} % Species reaction rates
+\newcommand{\rrT}{\dot{\omega}^{\prime}_{T}} % Reaction rate term in energy equation
+\newcommand{\nur}{\nu_{kj}^{\prime}} % Reverse stoichiometric coeff
+\newcommand{\nup}{\nu_{kj}^{\prime\prime}} % Forward stoichiometric coeff
+\newcommand{\nukj}[1]{\nu_{kj}} % Difference in stoichiometric coeffs
+\newcommand{\xk}[2]{%
+\ifthenelse{\isempty{#2}{}}{x_{#1}}{x_{#1}^{#2}}%
+}
+\newcommand{\xc}[1][]{%
+  \ifthenelse{\equal{#1}{}}{\mathbf{x}}{\mathbf{x}^{#1}}%
+}
+\newcommand{\enth}[1][]{%
+\ifthenelse{\equal{#1}{}}{\mathbf{h}}{\mathbf{h}^{#1}}%
+}
+\newcommand{\ent}[1][]{%
+\ifthenelse{\equal{#1}{}}{\mathbf{s}}{\mathbf{h}^{#1}}%
+}
+\newcommand{\cp}[1][]{%
+\ifthenelse{\equal{#1}{}}{\mathbf{c}_{p}}{\mathbf{c}_{p}^{#1}}%
+}
+\newcommand{\rr}[1][]{%
+  \ifthenelse{\equal{#1}{}}{\dot{\boldsymbol{\omega}}}{\dot{\boldsymbol{\omega}}^{#1}}
+}% Reaction rate vector
+\newcommand{\rri}[1][]{%
+  \ifthenelse{\equal{#1}{}}{\dot{\boldsymbol{\upsilon}}}{\dot{\boldsymbol{\upsilon}}^{#1}}
+}% Inadequacy vector
+
+\newcommand{\kf}{k_{j}^{\lr{f}}} % Forward reaction rate
+\newcommand{\kr}{k_{j}^{\lr{r}}} % Reverse reaction rate
+\newcommand{\ke}{k_{j}^{\lr{e}}} % Reverse reaction rate
+\newcommand{\pr}[1]{q_{#1}} % Progress rate of reaction
+\newcommand{\cpk}[1]{c_{p#1}} % Specific heat (constant p)
+\newcommand{\hk}[1]{h_{#1}} % Enthalpy of species
+\newcommand{\sk}[1]{s_{#1}} % Entropy of species
+\newcommand{\heating}{\dot{\mathcal{Q}}} % Heating rate in energy equation
+\newcommand{\Sop}{\boldsymbol{\mathcal{S}}} % Linear stochastic operator
+\newcommand{\Aop}{\boldsymbol{\mathcal{A}}} % Virtual reactions
+
+% Combustion operators
+\newcommand{\flame}{\mathbf{U}} % Flamelet solution vector
+
+\newcommand{\flamek}[1][]{%
+  \ifthenelse{\equal{#1}{}}{U}{U_{#1}}
+} % Flamelet solution
+
+% Statistic operators
+\newcommand{\rz}{\omega} % Realization
+\newcommand{\prob}[1]{p\lr{#1}} % General probability distribution
+\newcommand{\covar}[1]{\mathcal{C}_{#1}} % Covariance
+\newcommand{\param}{\boldsymbol{\theta}} % Generic parameter vector
+\newcommand{\normal}[2]{\mathcal{N}\lr{#1, #2}} % normal distribution
+\newcommand{\lnormal}[2]{\mathrm{ln}\mathcal{N}\lr{#1, #2}} % lognormal distribution
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

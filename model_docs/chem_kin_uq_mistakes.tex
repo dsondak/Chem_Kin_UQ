@@ -1,0 +1,377 @@
+\documentclass[fontsize=12pt, % Document font size
+               paper=a4, % Document paper type
+               hyperref]{report}
+
+\input{preamble_mistakes}
+
+\begin{document}
+
+\title{\textcolor{titleblue}{Chemical Kinetics Mistakes} \\[1cm]}
+
+\author{David Sondak}
+\date{} % No date by default, add \today if you wish to include the publication date
+
+\maketitle % Title page
+
+\newpage % Start lab look on a new page
+
+\pagestyle{scrheadings} % Begin using headers
+
+\section{Initial Formulation}
+  The initial formulation of our inadequacy model for chemical 
+  kinetics was a generalization of the original stochastic operator 
+  inadequacy model~\cite{morrison2016representing}.  We began by
+  introducing a simple global temperature dependence into the 
+  stochastic inadequacy operator.
+
+  The following subsections describe the intial chemical 
+  kinetics formulation~\ref{sec:chemkin1}, review the original 
+  inadequacy operator~\ref{sec:inad1}, and discuss the introduction 
+  of the global temperature depenence~\ref{sec:inad1}.  Following 
+  this review, we discuss the drawbacks of this approach and 
+  motivate an alternative formulation~\ref{sec:discuss1}.
+  
+
+  \subsection{Chemical Kinetics} \label{sec:chemkin1}
+  We consider a mixture at temperature $T$ undergoing $M$ elementary 
+  reactions and consisting of $N$ species.  The chemical system is
+  given by~\cite{kee2005chemically}
+  \begin{align}
+    \sum_{k=1}^{N}{\nur\mathcal{M}_{k}} \ce{<=>} 
+    \sum_{k=1}^{N}{\nup\mathcal{M}_{k}}, 
+    \quad j = 1,\ldots,M \label{eq:reactions}
+  \end{align}
+  where $\nur$ and $\nup$ represent the molar stoichiometric 
+  coefficients of the reactants and products, respectively and 
+  $\mathcal{M}_{k}$ is the symbol for species $k$.  The species molar 
+  concentrations are $\xc\lr{\time}$.  The $k^{\mathrm{th}}$ 
+  component of $\xc$ is the molar concentration of the species 
+  corresponding to $\mathcal{M}_{k}$.  
+  
+  Given the set of reactions~\eqref{eq:reactions}, the evolution of the
+  molar concentrations in a perfectly stirred reactor is governed by the
+  following set of ODEs:
+  \begin{align}
+     \odeone{\xc}{\time} = \rr\lr{\xc, T} \label{eq:ode_reactions}
+  \end{align}
+  where $\rr\lr{\xc, T}$ is the vector of reaction rates.  The reaction 
+  rate of species $k$ is
+  \begin{align}
+    \rrk{k} = \sum_{j=1}^{M}{\nukj{kj}\pr{j}}, \qquad k = 1,\ldots,N,
+  \end{align}
+  where $\pr{j}$ is the progress rate of reaction $j$ and $\nukj{kj} =
+  \nup - \nur$ is the difference between product and reactant
+  stoichiometric coefficients.  The progress rate $\pr{j}$ depends on
+  the forward and reverse reaction rates, $\kf$ and $\kr$ respectively
+  as well as the molar concentration of each species and has the form
+  \begin{align}
+    \pr{j} = \kf\prod_{k=1}^{N}{\displaystyle\xk{k}{\nur}} - 
+             \kr\prod_{k=1}^{N}{\displaystyle\xk{k}{\nup}}, 
+    \qquad j = 1,\ldots,M.
+  \end{align}
+  The forward reaction rate is given by a modified Arrhenius 
+  reaction as
+  \begin{align}
+    \kf = A_{j}T^{b_{j}}\exp\lr{-E_{j}/RT}, 
+    \qquad j = 1,\ldots,M, 
+    \label{eq:arrhenius}
+  \end{align}
+  where $R$ is the ideal gas constant.  The Arrhenius parameters $A_{j}$, $b_{j}$ and $E_{j}$ 
+  are the Arrhenius prefactor, modified Arrhenius parameter, and activation energy and are the 
+  uncertain reaction rate parameters.  The reverse reaction rate can be written in terms of the 
+  forward rate,
+  \begin{align}
+    \kr = \frac{\kf}{\ke}, \qquad j = 1,\ldots,M
+  \end{align}
+  where $\ke$ is the equilibrium constant.  The equilibrium 
+  constant is determined via thermodynamic considerations.  We 
+  refer the reader to~\cite[Ch.9.3]{kee2005chemically} for specific 
+  details on its development.  The final form for $\ke$ is 
+  \begin{align}
+    \ke = \lr{\frac{p_{a}}{RT}}^{\sum_{k=1}^{N}{\nukj{kj}}}
+          \exp\lr{\frac{\Delta \sk{j}}{R} - \frac{\Delta \hk{j}}{RT}}, 
+    \qquad j = 1,\ldots,M
+  \end{align}
+  where $p_{a}$ is atmospheric pressure, $\Delta \sk{j}$ is the 
+  change in entropy for reaction $j$ and $\Delta \hk{j}$ is the 
+  change in enthalpy for reaction $j$.  The entropy and enthalpy 
+  for each species are determined from the specific heat for each 
+  species $\cpk{k}\lr{T}$,
+  \begin{subequations}
+    \begin{align}
+      \hk{k}\lr{T} &= \int{\cpk{k}\dx{T}}, \qquad k = 1,\ldots,N \\
+      \sk{k}\lr{T} &= \int{\frac{\cpk{k}}{T}\dx{T}}, \qquad k=1,\ldots,N
+    \end{align}
+  \end{subequations}
+  and the specific heat is represented by a polynomial curve fit of 
+  order $p$, 
+  \begin{align}
+    \cpk{k}\lr{T} = \sum_{i=0}^{p}{\alpha_{ki}T^{i}}, \qquad k = 1,\ldots,N.
+  \end{align}
+  A common polynomial form in combustion is the NASA
+  polynomials~\cite{mcbride1993coefficients} where $p=7$ or $p=9$.  The coefficients 
+  $\alpha_{ki}$ are determined from experimental measurements or theory when available.  
+  Once the enthalpies and entropies of each species are available the change in entropy 
+  and enthalpy for a given reaction is 
+  \begin{subequations}
+    \begin{align}
+      \Delta \hk{j} = \sum_{k=1}^{N}{\nukj{kj}\hk{k}\lr{T}}, \qquad j = 1,\ldots,M \\
+      \Delta \sk{j} = \sum_{k=1}^{N}{\nukj{kj}\sk{k}\lr{T}} \qquad j=1,\ldots,M.
+    \end{align}
+  \end{subequations} 
+  At this point, only temperature has been left unspecified.  The temperature of 
+  the mixture is determined from the energy equation,
+  \begin{align}
+    \odeone{T}{\time} = \dfrac{-\displaystyle\enth\lr{T}\cdot\rr\lr{\xc,T} + \heating}
+                              {\displaystyle\cp\lr{T}\cdot\xc} 
+    \label{eq:energy}
+  \end{align}
+  where $\heating$ is a user-prescribed heating rate.
+
+    
+  \subsection{Inadequacy Formulation} \label{sec:inad1}
+  Combustion chemistry is well known to be highly complex, often
+  involving tens of species and hundreds of reactions for even seemingly
+  simple fuels~\cite{kee2005chemically}.  In some cases, the true
+  chemistry is sufficiently complicated that high-fidelity chemical
+  models are unknown.  Further, even when a sufficiently high-fidelity,
+  detailed chemical model is available, it may involve so many species
+  and reactions as to be computationally intractable for use in practical 
+  combustion simulations.  In such a case, it is common to replace the 
+  detailed mechanism with a reduced model containing fewer species and 
+  reactions.  In either case, when performing practical combustion simulations, 
+  it is common for the chemical kinetics representation to introduce
+  non-negligible modeling error.
+  
+  In the approach being pursued here, these errors are quantified
+  probabilistically using the stochastic model inadequacy 
+  operator~\cite{morrison2016representing}.  This approach is intended to
+  address the two major sources of modeling error in chemical models:
+  missing chemical species and missing reaction pathways.  To represent
+  the possible effects of the missing species, the original chemical
+  model state is enriched with virtual species---one for each type of
+  atom in the system.  To represent the possible effects of missing
+  pathways, a stochastic perturbation of the original chemical model
+  reaction mechanism involving both the original species and the virtual
+  species is formulated.  The goal of this work is to extend these ideas
+  from preveious work~\cite{morrison2016representing} to practical combustion
+  simulations.
+  
+  To illustrate the ideas in a concrete but simple setting, we consider
+  \ce{H2}/\ce{O2} combustion.  The twenty-one reaction, eight species
+  model~\cite{williams2008detailed} is taken to be a
+  high-fidelity model, and the five reaction, seven species model
+  from~\cite{williams2008detailed} is used as the chemical model for
+  which we wish to develop an inadequacy representation.  This setting
+  enables straightforward assessment of the model inadequacy
+  representation.
+
+  In light of these sources of uncertainty, we are developing a physics-based inadequacy 
+  model for chemical kinetics.  The goal of the inadequacy formulation is twofold.  First, 
+  it should account for the effects of the missing reaction pathways and species while not 
+  representing them directly.  Secondly, it should provide a way forward for prediction 
+  of quantities of interest such as $\ce{NO_x}$ generation.  Our approach follows the 
+  philosophy for validating prediction of unobserved quantities of interest as described 
+  in~\cite{oliver2015validating}.  We begin the development of the inadequacy model by 
+  introducing a hierarchy of models for chemical kinetics that follow the evolution 
+  equations~\eqref{eq:ode_reactions} and~\eqref{eq:energy}, 
+  \begin{align}
+    &\odeone{\xc[H]}{\time} = \rr[H]\lr{\xc[H],T} \\
+    &\odeone{T}{\time} = \dfrac{-\displaystyle\enth[H]\lr{T}\cdot\rr[H]\lr{\xc[h],T} + \heating}
+                              {\displaystyle\cp[H]\lr{T}\cdot\xc[H]}.
+  \end{align}
+  The superscript index $H$ can take values of $D$, $R$ and $I$ referring, respectively, to 
+  the detailed model, the reduced model and the inadequacy model.  In this work, the detailed 
+  model is taken to be a surrogate for the truth and has $N_{D}$ species with $M_{D}$ reactions.
+  Similarly, the reduced model has $N_{R}$ species and $M_{R}$ reactions while the inadequacy 
+  model has $N_{I}$ species and $M_{I}$ reactions.  The species in the reduced model are 
+  $\left\{\ce{H2}, \ce{O2}, \ce{H}, \ce{O}, \ce{OH}, \ce{HO2}, \ce{H2O}\right\}$ and the 
+  reduced reaction set is 
+  \begin{align*}
+    \ce{H + O2 <=> O + OH} \\
+    \ce{O + H2 <=> H + OH} \\
+    \ce{H2 + OH <=> H2O + H} \\
+    \ce{H + O2 + M <=> HO2 + M} \\
+    \ce{H2 + O2 <=> HO2 + H}
+  \end{align*}
+  where $\ce{M}$ is a third body.
+  
+  
+  The inadequacy model developed herein is a probabilistic model and is
+  formulated as an enrichment of the reduced model.  The fact that it is
+  probabilistic means that it depends on realizations of stochastic
+  parameters which we denote abstractly as $\rz$.  We will comment
+  further on the stochastic nature of the inadequacy model when we
+  introduce its specific form.  First, we introduce $N_{a}$ virtual
+  species where $N_{a}$ is equal to the number of atoms in the system.
+  Hence, the total number of species in the system is $N_{I} = N_{R} +
+  N_{a}$.  The \ce{H2}-\ce{O2} system has two atoms (\ce{H} and \ce{O})
+  and so $N_{a} = 2$.  Let $\xc[v] : \mathbb{R} \to \mathbb{R}^{N_{a}}$
+  and let $\ce{H^{\prime}}$ and $\ce{O^{\prime}}$ denote the virtual
+  species.  The virtual species are proxies for \ce{H} and \ce{O}.
+  Their purpose is to provide a mechanism to capture the effects of
+  neglected species.  With the introduction of the virtual species we
+  now let $\rr[I] : \mathbb{R}^{N_{I}}\times\mathbb{R} \to
+  \mathbb{R}^{N_{I}}$.  Moreover, we augment $\rr[R]$ with the zero
+  vector of size $N_{a}$.  The augmented vector is $\rr[R]_{0} =
+  \left[\rr[R], \ \mathbf{0}\right]^{tr}$.  Let $\rri :
+  \mathbb{R}^{N_{I}}\times\mathbb{R} \to \mathbb{R}^{N_{I}}$ denote the
+  perturbation of the reduced model right hand side.  The species
+  evolution equation is now
+  \begin{align}
+    \odeone{\xc[I]}{\time} = \rr[I]\lr{\xc[I], T} \label{eq:ode_inad}
+  \end{align}
+  where 
+  \begin{align}
+    \rr[I]\lr{\xc[I], T} = \rr[R]_{0}\lr{\xc[R], T} + \rri\lr{\xc[I], T; \rz}. \label{eq:rr_inad}
+  \end{align}
+  
+  Recent work~\cite{morrison2016representing} introduced a stochastic operator for $\rri$.  The 
+  idea was to introduce a linear correction to the reduced model as well as three additional 
+  reaction pathways that facilitate movement of the virtual species.  The stochastic operator 
+  takes the form
+  \begin{align}
+    \rri\lr{\xc[I]} = \Sop\xc[I] + \Aop\lr{\xc[I]} \label{eq:inad_model_noT}
+  \end{align}
+  where $\Sop$ is a stochastic linear operator that represented
+  additional reaction pathways not included in the reduced model.
+  Requirements for $\Sop$ to conserve atoms and preserve positivity of
+  species concentrations are discussed in detail by Morrison et
+  al.~\cite{morrison2016representing}.  
+  
+  Note that $\Sop$ permits species in the model to react to form other
+  species or virtual species.  By involving the virtual species, one has
+  the potential to represent the effects of real species not included the
+  model and associated pathways.  However, the linearity of $\Sop$ has
+  the undesirable side-effect that, in some cases, mass can become such
+  in the virtual species.  To avoid this problem, the nonlinear operator
+  $\Aop$ is added.  In the \ce{H2}-\ce{O2} system $\Aop$
+  represents the following reactions,
+  \begin{align}
+    \ce{H^{\prime} + O^{\prime}  ->[\kappa_{1}] OH} \\
+    \ce{H^{\prime} + 2O^{\prime} ->[\kappa_{2}] HO2} \\
+    \ce{H^{\prime} + O^{\prime}  ->[\kappa_{3}] H2O}
+  \end{align} 
+  where $\kappa_{j}$ is the constant forward reaction rate for the reaction.  Note that 
+  these reactions do not proceed in the reverse direction.
+  
+  While this new model form represents an enrichment of the original
+  model, there is no expectation that the new form is correct in a
+  deterministic sense.  That is, we do not expect that there are
+  universal values of the entries of $\Sop$ and rate parameters
+  $\kappa_j$ that perfectly correct the model.  Instead, the required
+  values will vary from case to case.  To develop a model that is
+  applicable to a wide range of scenarios, we represent this variability
+  by modeling the entries of $\Sop$ and $\kappa_i$ as random variables
+  with given probability distributions parameterized by additional
+  hyperparameters.  These hyperparameters are inferred based on data
+  using a hierarchical Bayesian approach.
+  
+  As noted in section~\ref{sec:intro}, the present inadequacy
+  operator~\eqref{eq:inad_model_noT} does not contain any temperature
+  dependence.  In this way, the operator is always active even for
+  temperatures when no reactions are occurring and when the reduced model
+  is performing well.  This feature leads to qualitatively incorrect
+  results for some problems.  For instance, in a laminar counterflow
+  diffusion flame case, the inadequacy operator is active even well
+  outside the flame, where there should be no uncertainty.  In an
+  attempt to overcome this limitation we introduce a global temperature
+  dependence $g\lr{T}$ on the inadequacy operator,
+  \begin{align}
+    \rri\lr{\xc[I]} = g\lr{T}\left[\Sop\xc[I] + \Aop\lr{\xc[I]}\right]. \label{eq:inad_model_T}
+  \end{align}
+  It is also possible to introduce temperature dependence into each of the entries of $\Sop$ 
+  but this would increase the dimensionality of the system considerably which we wish to 
+  avoid.  Moreover, the global temperature dependence offers a clean way to introduce the 
+  desired temperature control on the inadequacy model.  We introduce two forms for $g\lr{T}$.  
+  The first form is a global Arrhenius temperature dependence, 
+  \begin{align}
+    g_{A}\lr{T} = \exp\lr{-\frac{T_{\mathrm{ag}}}{T}} \label{eq:gA}
+  \end{align}
+  where $T_{\mathrm{ag}}$ is a global activation temperature and is inferred as part of the 
+  calibration procedure.  The second form for $g\lr{T}$ that we consider is a global 
+  switch, 
+  \begin{align}
+    g_{S}\lr{T} = \tanh\lr{T - T_{\mathrm{on}}} - \tanh\lr{T - T_{\mathrm{off}}} \label{eq:gS}
+  \end{align}
+  where $T_{\mathrm{on}}$ and $T_{\mathrm{off}}$ are two additional parameters to be calibrated.
+
+  We briefly comment on our calibration approach for the kinetics inadequacy model.  We use a 
+  hierarchical Bayesian method in which, for certain parameters, we propose a specific 
+  probability distribution characterized by parameters (called hyperparameters) and we calibrate the 
+  hyperparameters in addition to the parameters themselves.  Our approach is inspired by 
+  techniques pioneered in the statistics community~\cite{berliner1996hierarchical} but our 
+  interpretation is slightly different.  To illustrate the procedure and our interpretation, 
+  we provide an example.
+  
+  Bayes' theorem is 
+  \begin{align}
+    \prob{\left.\param\right| \mathbf{D}} = 
+    \frac{\prob{\left.\mathbf{d} = \mathbf{D}\right|\param}\prob{\param}}{\prob{\mathbf{D}}}
+    \label{eq:bayes}
+  \end{align}
+  where $\prob{\left.\mathbf{d} = \mathbf{D}\right|\param}$ is the likelihood function, 
+  $\prob{\param}$ is the prior probability density function for the parameters and 
+  $\prob{\left.\param\right| \mathbf{D}}$ is the posterior probability distribution of 
+  the parameters.  $\prob{\mathbf{D}}$ is called the evidence and is treated as a 
+  normalization factor in most algorithms.  A particular value of the truth data $\mathbf{D}$ 
+  is denoted by $\mathbf{d}$ and $\param$ denotes a vector of parameters.  We provide 
+  prior distributions that represent our prior knowledge of the system.  For example, 
+  for purely positive parameters one may propose a log-normal distribution.  In order to 
+  illustrate the hierarchical approach that we use, we will work with a normal distribution.  
+  Note that parameters in the stochastic operator do not strictly use normal distributions.  
+  For the specific prior distributions, the reader is referred to~\cite{morrison2016representing}.  
+  
+  A normally-distributed parameter $\theta$ with mean $\mu$ and standard deviation $\sigma$ 
+  has the prior distribution,
+  \begin{align}
+    \prob{\theta} \sim \normal{\mu}{\sigma^{2}}. \label{eq:normal_prior}
+  \end{align}
+  In the hierarchical approach, the mean and variance $\eta = \sigma^{2}$ are also 
+  distributions.  In the present work, the mean is also normally distributed while 
+  the variance is given by the uninformative Jeffreys distribution, 
+  \begin{subequations}
+    \begin{align}
+      \mu        &\sim \normal{\mu_{\mu}}{\sigma^{2}_{\sigma}} \\
+      \sigma^{2} &\sim \mathcal{J}.
+    \end{align}
+  \end{subequations}
+  The hierarchical approach is beneficial because we do not wish the calibration of the 
+  inadequacy model to apply to a single problem.  By calibrating the hyperparameters, 
+  the inadequacy model can be used in various scenarios that may differ from the 
+  calibration scenario.  Note that we directly calibrate the parameters appearing 
+  in the global temperature dependence.
+  
+  In the present work, we choose a Gaussian likelihood function, 
+  \begin{align}
+    \prob{\left.\mathbf{d} = \mathbf{D}\right|\param} = 
+    \exp\lr{-\frac{1}{2}\lr{\mathbf{y} - \mathbf{d}}^{\tr}\boldsymbol{\Sigma}\lr{\mathbf{y} - \mathbf{d}}} 
+    \label{eq:lhood}
+  \end{align}
+  where $\mathbf{y}$ is the prediction from the kinetics model and $\mathbf{d}$ is 
+  truth data from the detailed model.  The matrix $\boldsymbol{\Sigma}$ contains 
+  observation errors for each field (concentration and temperature).  
+  
+  The results presented in section~\ref{sec:results_inad} only include a calibration of 
+  the inadequacy model.  Calibration of the Arrhenius reactions was not performed in 
+  this analysis since we were only interested in the effects of the calibrated 
+  inadequacy model.  The standard deviation of the prior distributions was taken to be 
+  $10\%$ of the mean values.  The inverse problem~\eqref{eq:bayes} was solved using the 
+  delayed rejection adaptive Metropolis (DRAM) algorithm provided in the QUESO software 
+  package~\cite{mcdougall2015parallel, estacio2016queso}.
+
+
+  \subsection{Discussion} \label{sec:discuss1}
+
+\section{First Reformulation}
+
+  \subsection{Chemical Kinetics}
+  \subsection{Inadequacy Formulation}
+  \subsection{Discussion}
+
+\bibliographystyle{siam}
+\bibliography{chemkin}
+
+\end{document}
+
+
