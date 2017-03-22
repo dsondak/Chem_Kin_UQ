@@ -17,6 +17,7 @@
 
 \usepackage{amsmath, amsfonts} % For typesetting math
 \usepackage{graphicx} % Required for including images
+\graphicspath{{figs/}}
 \usepackage{etoolbox}
 \usepackage[norule]{footmisc} % Removes the horizontal rule from footnotes
 \usepackage{lastpage} % Counts the number of pages of the document
@@ -161,6 +162,11 @@
 \newcommand{\heating}{\dot{\mathcal{Q}}} % Heating rate in energy equation
 \newcommand{\Sop}{\boldsymbol{\mathcal{S}}} % Linear stochastic operator
 \newcommand{\Aop}{\boldsymbol{\mathcal{A}}} % Virtual reactions
+\newcommand{\moles}[1]{x_{#1}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\xv}{\mathbf{x}^{v}}
+\newcommand{\Hp}{\ce{H}^{\prime}}
+\newcommand{\Op}{\ce{O}^{\prime}}
 
 % Combustion operators
 \newcommand{\flame}{\mathbf{U}} % Flamelet solution vector

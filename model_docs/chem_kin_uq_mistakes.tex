@@ -58,6 +58,7 @@
   rate of species $k$ is
   \begin{align}
     \rrk{k} = \sum_{j=1}^{M}{\nukj{kj}\pr{j}}, \qquad k = 1,\ldots,N,
+    \label{eq:rrk}
   \end{align}
   where $\pr{j}$ is the progress rate of reaction $j$ and $\nukj{kj} =
   \nup - \nur$ is the difference between product and reactant
@@ -267,7 +268,7 @@
   hyperparameters.  These hyperparameters are inferred based on data
   using a hierarchical Bayesian approach.
   
-  As noted in section~\ref{sec:intro}, the present inadequacy
+  The present inadequacy
   operator~\eqref{eq:inad_model_noT} does not contain any temperature
   dependence.  In this way, the operator is always active even for
   temperatures when no reactions are occurring and when the reduced model
@@ -352,7 +353,7 @@
   truth data from the detailed model.  The matrix $\boldsymbol{\Sigma}$ contains 
   observation errors for each field (concentration and temperature).  
   
-  The results presented in section~\ref{sec:results_inad} only include a calibration of 
+  The results only include a calibration of 
   the inadequacy model.  Calibration of the Arrhenius reactions was not performed in 
   this analysis since we were only interested in the effects of the calibrated 
   inadequacy model.  The standard deviation of the prior distributions was taken to be 
@@ -360,13 +361,340 @@
   delayed rejection adaptive Metropolis (DRAM) algorithm provided in the QUESO software 
   package~\cite{mcdougall2015parallel, estacio2016queso}.
 
+  The posterior distributions were propagated through the model~\eqref{eq:ode_inad} and 
+  the accompanying energy equation.  Figure~\ref{fig:T_evo} shows the time-evolution of 
+  the temperature of the mixture from the maximum likelihood estimate of each calibrated 
+  inadequacy model.  The solution from the detailed model is compared to that from the 
+  reduced model and various versions of the inadequacy model.  The inadequacy model without 
+  any temperature dependence ($g\lr{T} = 1$) is shown in the left plot of Figure~\ref{fig:T_evo}.  
+  We observe that when using~\eqref{eq:inad_model_noT} as the inadequacy model the mixture 
+  ignites almost immediately.  This is precisely the issue we wish to address by introducing a 
+  temperature dependent inadequacy model.  We also observe that the final temperature is far too 
+  high when compared with the detailed model.  On the other hand, in the right plot of 
+  Figure~\ref{fig:T_evo}, which is zoomed to the ignition time, we observe that the global 
+  Arrhenius temperature dependence delays ignition but that the ignition time is delayed almost 
+  to that of the reduced model which does not match the detailed model.  Finally, the global 
+  switch temperature dependence performs somewhat better relative to the detailed model but still 
+  does not correctly predict the ignition time.
+  \begin{figure}[h!]
+    \begin{center}
+      \includegraphics[width=0.49\linewidth]{T_evo_unity.pdf}~
+      \includegraphics[width=0.49\linewidth]{T_evo_global.pdf}
+    \end{center}
+    \caption{Time evolution of the temperature in the perfectly stirred reactor. 
+             The detailed model and reduced model are provided for reference.  
+             A deterministic forward solve using parameters from the maximum 
+             likelihood estimate of the inadequacy model without (left) and 
+             with (right) global temperature dependence.}
+    \label{fig:T_evo}
+  \end{figure}
+  
+  Based on the results from a deterministic forward solve using parameters from the 
+  maximum likelihood estimate, we decided to assess the performance of the global switch 
+  temperature dependence.  Figure~\ref{fig:tanh_inadequacy} plots the time evolution of the 
+  temperature.  Each solution is zoomed to the ignition time as before.  The 
+  detailed model solution and the reduced model solution are provided as reference.  
+  The mean of the solutions obtained using the calibrated global switch model 
+  captures the ignition time very well although it misses the equilibrium behavior.  
+  We also considered credibility interval curves at the $40\%$ and $90\%$ confidence 
+  intervals.  Figure~\ref{fig:tanh_inadequacy} shows that there is an enormous spread in the 
+  data between these curves.  The spread is so large that model only indicates that 
+  the mixture may or may not ignite.  We therefore note that the temperature-dependent 
+  inadequacy model~\eqref{eq:inad_model_T}, although flexible, does not provide predictive 
+  capabilities.
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{tanh_inadequacy.pdf}
+    \caption{Time evolution of temperature in the perfectly stirred reactor. 
+             The mean of the results from the calibrated global switch model 
+             captures the ignition time very well.  However, the overall 
+             model fails to provide meaningful prediction capabilities.}
+    \label{fig:tanh_inadequacy}
+  \end{figure}
+
 
   \subsection{Discussion} \label{sec:discuss1}
+  The lack of predictive capabilities of the temperature-dependent
+  inadequacy operator indicates that a new inadequacy model is likely
+  required.  In particular, at least with the data used for this
+  calibration, the resulting model predictions are so uncertain as to be
+  not useful.  Further, given that the original reduced model predicts
+  the chemical equilibrium result quite well, the large uncertainty
+  predicted at later times shown in Figure~\ref{fig:tanh_inadequacy} is
+  unnecessary.  Thus, it appears that a richer dependence of the
+  stochastic model on the thermochemical state is required.  Such a
+  formulation should allow different inadequacy reactions to be active
+  at different times and may need to be fully nonlinear.
 
 \section{First Reformulation}
+  One possible route to including richer temperature dependence in the 
+  inadequacy model involves expanding the role of the virtual species.  
+  Doing so provides a way of introducing a fully nonlinear inadequacy model 
+  which provides additional reaction pathways that mimic the effects of the 
+  those pathways that have been neglected from the detailed model.  We have 
+  begun work on an inadequacy model that consists of a set of reversible 
+  dissociation-recombination reactions.  Each species in the reduced model 
+  is able to dissociate into the virtual species.  The virtual species can 
+  then recombine to form the actual species.  In such a formulation, 
+  formation of the virtual species should not be preferred since they are 
+  only used as a placeholder for missing reaction pathways.  As such, the 
+  recombination reactions should be favored.  To accomplish this, the 
+  thermochemical parameters for the virtual species must be carefully 
+  constrained.  One manner of constraint is require the Gibbs free energy 
+  for each reaction in the virtual reaction set to be positive.  This 
+  constraint in turn places additional constraints on the thermochemical 
+  parameters of the virtual species.
 
-  \subsection{Chemical Kinetics}
+  Recall that the original stochastic operator formulation introduced a set 
+  of virtual species whose original purpose was to provide an outlet for 
+  atoms that would belong to neglected species.  Put another way, the virtual 
+  species attempt to account for the missing mass that may be 
+  neglected in the reduced model.  For example, in the \ce{H2}/\ce{O2} 
+  system used in the present work, \ce{H2O2} is neglected in 
+  the reduced model.  However, atoms belonging to \ce{H2O2} may 
+  dissociate into other species which \textit{are} present in the 
+  reduced model.  An additional and important benefit of introducing 
+  the virtual species is that they provide possible additional reaction 
+  pathways. 
+
+
+  \subsection{Chemical Kinetics} \label{sec:chemkin2}
+  The initial chemical kinetics formulation presented in Section~\ref{sec:chemkin1} 
+  did not apply to the combustion application we have in mind.  
+  The formulation that we are interested in consists of a constant 
+  pressure reactor whose volume may change in time.  The gas mixture 
+  in the chamber is assumed to follow the ideal gas law 
+  \begin{align}
+    pV = X R T \label{eq:ideal_gas_law}
+  \end{align}
+  where $p$ is the constant reactor pressure, $V = V\lr{t}$ is 
+  the volume of the reactor, $X$ represents the total moles in 
+  the mixture, $R$ is the ideal gas constant and $T$ is the 
+  temperature of the mixture.  We consider a mixture of $N$ 
+  species undergoing $M$ reactions.  Note that the total 
+  moles in the mixture is simply the sum of the moles of each 
+  species, 
+  \begin{align}
+    X = \sum_{k=1}^{N}{\moles{k}}.
+  \end{align}
+  
+  The total moles of each species evolves according to 
+  \begin{align}
+    \odeone{\moles{k}}{\time} = \rrk{k}V
+  \end{align}
+  where the reaction rate is still governed by~\eqref{eq:rrk}.
+  The energy equation is now 
+  \begin{align}
+    \odeone{T}{\time} = \frac{-\enth\cdot\rr V + \heating}{\cp\cdot\x}
+  \end{align}
+  where $\enth$ is the enthalpy of each species in molar units, 
+  $\cp$ is the specific heat at constant pressure for each 
+  species (also in molar units), $\heating$ 
+  is the user-supplied heating rate (a constant in what follows), 
+  and $\x$ is the number of moles of each species. 
+
+  
+
   \subsection{Inadequacy Formulation}
+  The most obvious choice for 
+  the virtual species is one for each atom in the system.  For the 
+  \ce{H2}/\ce{O2} system the set of virtual species is 
+  $\xv = \left(\ce{H}^{\prime}, \ce{O}^{\prime}\right)$.  We posit that 
+  this minimal set of species will provide enough flexibly to meet 
+  our goals.  There are a variety of possibilities for incorporating 
+  the virtual species into a reaction set.  We focus on a set of 
+  $M_{v}$ dissociation-recombination reactions.  We allow each species in 
+  the system to dissociate into its constituent atoms which are represented 
+  by the virtual species.  Moreover, we propose that the virtual species 
+  can recombine into their parent species.  The species in the reduced model 
+  for the \ce{H2}/\ce{O2} system are 
+  $\left\{\ce{H2}, \ce{O2}, \ce{H}, \ce{O}, \ce{OH}, \ce{HO2}, \ce{H2O}\right\}$. 
+  There are five non-monatomic species in the reduced model leading to 
+  $M_{v}=5$ virtual reactions.  The set of reversible, dissociation-recombination 
+  virtual reactions is therefore
+  \begin{align}
+    \ce{H2}  &\ce{<=>} 2\Hp \tag{VR1} \label{eq:VR1} \\
+    \ce{O2}  &\ce{<=>} 2\Op \tag{VR2} \label{eq:VR2} \\
+    \ce{OH}  &\ce{<=>} \Hp + \Op \tag{VR3} \label{eq:VR3} \\
+    \ce{HO2} &\ce{<=>} \Hp + 2\Op \tag{VR4} \label{eq:VR4} \\
+    \ce{H2O} &\ce{<=>} 2\Hp + \Op \tag{VR5} \label{eq:VR5}.
+  \end{align}
+  
+  The set of virtual reactions is treated as a set of reversible 
+  modified Arrhenius reactions.  That is, the forward reaction 
+  rates for reactions~\eqref{eq:VR1}-\eqref{eq:VR5} are 
+  \begin{align}
+    \kf{j} = A_{j}T^{b_{j}}\exp\lr{-E_{j}/RT}, \qquad j = 1,\ldots M_{v}
+  \end{align}
+  where the set of kinetics parameters $\left\{A_{j}, b_{j}, E_{j}\right\}$ 
+  have proposed distributions with hyperparameters that are to be 
+  inferred.  We must also provide a way of representing the 
+  enthalpy and specific heat of each virtual species in order to 
+  determine the mixture temperature.  The 
+  specific heat for each virtual species is prescribed in the form
+  \begin{align}
+    c_{pk}^{\prime} = \alpha_{k1} + 2\alpha_{k2}T, \qquad k = 1,\ldots,N_{v}.
+  \end{align} 
+  The enthalpy and entropy for each species are then 
+  \begin{align}
+    h_{k}^{\prime} &= \alpha_{k0} + \alpha_{k1}T + \alpha_{k2}T^{2}, 
+      \qquad k = 1,\ldots,N_{v} \\
+    s_{k}^{\prime} &= \beta_{k} + \alpha_{k1}\ln\lr{T} + 2\alpha_{k2}T, 
+      \qquad k = 1,\ldots,N_{v}.
+  \end{align}
+  The coefficients $\alpha_{ki}$ and $\beta_{k}$ will also be
+  given proposed distributions with associated hyperparameters 
+  to infer.  Before outlining the inference procedure, we 
+  introduce additional information about the virtual 
+  reactions~\eqref{eq:VR1}-\eqref{eq:VR5}.  In particular, 
+  we wish to ensure that the reverse reaction is favored 
+  over the forward reaction so that recombination of 
+  virtual species into actual species is favored.  This constraint 
+  can be enforced by considering the Gibbs free energy for reaction 
+  $j$, 
+  \begin{align}
+    \Delta G_{j}^{\lr{v}}= \Delta h_{j} - T \Delta s_{j}, 
+      \qquad j = 1, \ldots, M_{v}.
+  \end{align}
+  Note that $\Delta G_{j}^{\lr{v}}$ can be expressed in terms of the 
+  Gibbs free energy of each species as 
+  \begin{align}
+    \Delta G_{j}^{\lr{v}} &= \sum_{k=1}^{N}{\nu_{kj}\lr{h_{k} - T s_{k}}} \\
+                 &= \sum_{k=1}^{N}{\nu_{kj}g_{k}}
+  \end{align}
+  where $h_{k}$ and $s_{k}$ are the enthalpy and entropy of 
+  each species in the system including the virtual species.
+  The reverse reaction is favored if $\Delta G_{j}^{\lr{v}} > 0$.  
+  We use this constraint on our virtual reactions to constrain 
+  the entropy constants $\beta_{k}$.  Any parameters 
+  appearing in the thermochemistry representation for the actual 
+  species are taken to be immutable.  The constraints on the 
+  entropy coefficients are 
+  \begin{align}
+    \beta_{_{\ce{H}^{\prime}}} &< \underbrace{-s_{_{\ce{H}^{\prime}}}^{\lr{T}} + 
+          \frac{1}{T}\left[h_{_{\ce{H}^{\prime}}} - \frac{1}{2}g_{_{\ce{H2}}}\right]}_{\displaystyle c_{1}}
+      \label{eq:c1} \\
+    \beta_{_{\ce{O}^{\prime}}} &< \underbrace{-s_{_{\ce{O}^{\prime}}}^{\lr{T}} + 
+          \frac{1}{T}\left[h_{_{\ce{O}^{\prime}}} - \frac{1}{2}g_{_{\ce{O2}}}\right]}_{\displaystyle c_{2}} 
+      \label{eq:c2} \\
+    \beta_{_{\ce{O}^{\prime}}} &< \underbrace{-\beta_{_{\ce{H}^{\prime}}} 
+       -\lr{s_{_{\ce{H}^{\prime}}}^{\lr{T}} + s_{_{\ce{O}^{\prime}}}^{\lr{T}}} + 
+       \frac{1}{T}\left[\lr{h_{_{\ce{H}^{\prime}}} + h_{_{\ce{O}^{\prime}}}} - g_{_{\ce{OH}}}\right] 
+       }_{\displaystyle c_{3}}
+      \label{eq:c3} \\
+    \beta_{_{\ce{O}^{\prime}}} &< \underbrace{\frac{1}{2}\left\{-\beta_{_{\ce{H}^{\prime}}}
+       -\lr{s_{_{\ce{H}^{\prime}}}^{\lr{T}} + 2s_{_{\ce{O}^{\prime}}}^{\lr{T}}} + 
+       \frac{1}{T}\left[\lr{h_{_{\ce{H}^{\prime}}} + 2h_{_{\ce{O}^{\prime}}}} - g_{_{\ce{HO2}}}\right] 
+       \right\}}_{\displaystyle c_{4}}
+      \label{eq:c4} \\
+    \beta_{_{\ce{O}^{\prime}}} &< \underbrace{-2\beta_{_{\ce{H}^{\prime}}} + 
+       -\lr{2s_{_{\ce{H}^{\prime}}}^{\lr{T}} + s_{_{\ce{O}^{\prime}}}^{\lr{T}}} + 
+       \frac{1}{T}\left[\lr{2h_{_{\ce{H}^{\prime}}} + h_{_{\ce{O}^{\prime}}}} - g_{_{\ce{H2O}}}\right]
+       }_{\displaystyle c_{5}}
+      \label{eq:c5}
+  \end{align}
+  where
+  \begin{align}
+    s_{k}^{\lr{T}} = \alpha_{k1}\ln\lr{T} + 2\alpha_{k2}T, \qquad 
+         k\in\left\{\ce{H}^{\prime}, \ \ce{O}^{\prime}\right\}.
+  \end{align}
+  This set of constraints leads to an over-constrained system.  We enforce 
+  the constraints by first imposing~\eqref{eq:c1} to determine the minimum of 
+  $\beta_{_{\ce{H}^{\prime}}}$ over the temperature range $T\in\left[300, 3000\right]$.  
+  Next, we take the most stringent constraint of the remaining four constraints 
+  to determine $\beta_{_{\ce{O}^{\prime}}}$.  That is, 
+  \begin{align}
+    c_{*} = \min_{T\in\left[300, 3000\right]}\lr{c_{2}, c_{3}, c_{4}, c_{5}}.
+  \end{align}
+  The entropy constraint just outlined should be built into the prior.  To 
+  accomplish this, we recognize that the the constraints can be recast as 
+  positivity constraints on a different set of parameters.  For example, the first 
+  constraint can be written as $c_{1} - \beta_{_{\ce{H}^{\prime}}} > 0$. 
+  We introduce a positive parameter $\gamma_{k} > 0$ so that the  
+  constraint on the first entropy coefficient becomes 
+  \begin{align}
+    \beta_{_{\ce{H}^{\prime}}} = c_{1} - \gamma_{1}.
+  \end{align}
+  Similarly, the constraint on the second entropy coefficient is 
+  \begin{align}
+    \beta_{_{\ce{O}^{\prime}}} = c_{*} - \gamma_{2}.
+  \end{align}
+  Figure~\ref{fig:G5v} shows the Gibbs free energy for virtual 
+  reaction $5$ from $10000$ realizations of the thermochemistry 
+  parameters.  The Gibbs free energy remains positive over the 
+  entire temperature range for each draw as designed.  The Gibbs 
+  free energy for the other four virtual reactions is also positive 
+  over the entire temperature range.
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{G5_v.pdf}
+    \caption{The Gibbs free energy for virtual reaction $5$
+             ($\Delta G_{5}^{\lr{v}}$) from $10000$ realizations 
+             of the virtual thermochemistry parameters.  As 
+             designed, it remains positive over the entire 
+             temperature range.}
+    \label{fig:G5v}
+  \end{figure}
+  
+  In the new inadequacy model just outlined, the modified Arrhenius 
+  parameters and thermochemistry parameters must be inferred.  As mentioned 
+  in the preceding paragraphs, the inference is accomplished with a 
+  hierarchical Bayesian method.  The priors for each parameter are given by 
+  \begin{align}
+    &A_{j} \sim \log\mathcal{N}\lr{\mu_{Aj}, \eta_{Aj}}, \qquad 
+    \mu_{Aj} \sim \mathcal{N}\lr{\mu_{Aj}^{\lr{\mu}}, \eta_{Aj}^{\lr{\eta}}}, \qquad 
+    \eta_{Aj} \sim \mathcal{J}, \qquad j = 1,\dots, M_{v} \\
+    &b_{j} \sim \mathcal{N}\lr{\mu_{bj}, \eta_{bj}}, \qquad 
+    \mu_{bj} \sim \mathcal{N}\lr{\mu_{bj}^{\lr{\mu}}, \eta_{bj}^{\lr{\eta}}}, \qquad 
+    \eta_{bj} \sim \mathcal{J}, \qquad j = 1,\dots, M_{v} \\
+    &E_{j} \sim \mathcal{N}\lr{\mu_{Ej}, \eta_{Ej}}, \qquad 
+    \mu_{Ej} \sim \mathcal{N}\lr{\mu_{Ej}^{\lr{\mu}}, \eta_{Ej}^{\lr{\eta}}}, \qquad 
+    \eta_{Ej} \sim \mathcal{J}, \qquad j = 1,\dots, M_{v} \\
+    &\alpha_{k0} \sim \mathcal{N}\lr{\mu_{\alpha_{k0}}, \eta_{\alpha_{k0}}}, \qquad 
+    \mu_{\alpha_{k0}} \sim \mathcal{N}\lr{\mu_{\alpha_{k0}}^{\lr{\mu}}, \eta_{\alpha_{k0}}^{\lr{\eta}}}, \qquad 
+    \eta_{\alpha_{k0}} \sim \mathcal{J}, \qquad k = 1,\dots, N_{v} \\
+    &\alpha_{ki} \sim \log\mathcal{N}\lr{\mu_{\alpha_{ki}}, \eta_{\alpha_{ki}}}, \qquad 
+    \mu_{\alpha_{ki}} \sim \mathcal{N}\lr{\mu_{\alpha_{ki}}^{\lr{\mu}}, \eta_{\alpha_{ki}}^{\lr{\eta}}}, \qquad 
+    \eta_{\alpha_{ki}} \sim \mathcal{J}, \quad i > 0, \quad k = 1,\dots, N_{v} \\
+    &\gamma_{k} \sim \log\mathcal{N}\lr{\mu_{\gamma k}, \eta_{\gamma k}}, \qquad 
+    \mu_{\gamma k} \sim \mathcal{N}\lr{\mu_{\gamma k}^{\lr{\mu}}, \eta_{\gamma k}^{\lr{\eta}}}, \qquad 
+    \eta_{\gamma k} \sim \mathcal{J}, \qquad k = 1,\dots, N_{v}
+  \end{align}
+  where $\mathcal{N}$ is a normal distribution, $\log\mathcal{N}$ 
+  represents a log-normal distribution, and $\mathcal{J}$ represents 
+  a Jeffrey's prior.  The new model has $69$ dimensions which is about 
+  half as many dimensions as the original inadequacy model.
+
+  The majority of this quarter was spent developing the new inadequacy 
+  model for chemical kinetics.  The new model has about half as many 
+  parameters to infer as the original inadequacy model while providing 
+   a more nuanced temperature dependence than the original 
+  inadequacy model.  We are now in the process of calibrating the new 
+  inadequacy model with data provided by the detailed model.  As in 
+  previous quarters, the inadequacy operator will be calibrated using 
+  data generated from a detailed model containing $21$ reactions and $8$ 
+  species~\cite{yoo2009three}.  Data was generated at three equivalence 
+  ratios:  $\phi = 0.5$, $\phi = 1.0$, and $\phi = 2.0$.  Calibration data 
+  was taken at $10$ points that captured the essential behavior of the temporal 
+  evolution of the temperature.  The reduced model used five reactions and 
+  $7$ species~\cite{williams2008detailed}.
+  
+  Figure~\ref{fig:new_inad_demo} demonstrates that the new inadequacy 
+  model is expected to be flexible enough to match the detailed model.  
+  The result in Figure~\ref{fig:new_inad_demo} was obtained by 
+  hand-tuning the parameters.  In spite of hand-tuning, the result 
+  is quite encouraging.
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{kinetics_inad_RD.pdf}
+    \caption{Time-evolution of the temperature for the detailed, reduced 
+             and inadequacy models zoomed to the ignition time.  The 
+             hand-tuned inadequacy model matches the truth data very 
+             closely indicating that the new inadequacy model may 
+             provide the desired flexibility and temperature dependence.}
+    \label{fig:new_inad_demo}
+  \end{figure}
+
   \subsection{Discussion}
 
 \bibliographystyle{siam}
