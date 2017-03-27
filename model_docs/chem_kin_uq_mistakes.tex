@@ -91,7 +91,7 @@
   \begin{align}
     \ke = \lr{\frac{p_{a}}{RT}}^{\sum_{k=1}^{N}{\nukj{kj}}}
           \exp\lr{\frac{\Delta \sk{j}}{R} - \frac{\Delta \hk{j}}{RT}}, 
-    \qquad j = 1,\ldots,M
+    \qquad j = 1,\ldots,M \label{eq:ke}
   \end{align}
   where $p_{a}$ is atmospheric pressure, $\Delta \sk{j}$ is the 
   change in entropy for reaction $j$ and $\Delta \hk{j}$ is the 
@@ -696,6 +696,44 @@
   \end{figure}
 
   \subsection{Discussion}
+  Given that hand-tuning the dissociation-recombination 
+  inadequacy model gave promising results, we proceeded 
+  to start a Bayesian inference.  It quickly became 
+  apparent that additional challenges were present.  The 
+  inference would sample parameter values such that the 
+  numerical integration failed.  Explicit integrators 
+  are not expected to perform well on chemical kinetic 
+  systems due to the stiffness of chemical kinetics.  We 
+  were initially using an explicit integrator (RK45 from GSL) 
+  which worked  well for the original inadequacy formulation 
+  as well as the detailed and reduced models.  However, 
+  the new inadequacy model appeared to be particularly stiff 
+  and as a result we switched to an implicit integrator.  
+  In principle, an implicit integrator would allow us to 
+  take larger time steps and essentially step over the 
+  fastest time scales in the system.  One could interpret 
+  this feature as being consisten with the quasi-steady state 
+  approximation in chemical kinetics.
+
+  We chose to use the CVODE solver provided in the Sundials 
+  suite of numerical solvers.  CVODE provides adaptive order 
+  BDF methods on top of adaptive time stepping.  The adaptivity 
+  is necessary for the solver to actually solve the problem 
+  to a specified error tolerance.  In our case, we 
+  would prefer to step over the fastest time scales whereas 
+  CVODE senses the fastest time scales as part of the 
+  adaptive procedure.  This difficulty ultimately caused 
+  CVODE to struggle with the inadequacy model to the point 
+  where it could often not even find a solution to the problem. 
+  We also tried ARKODE which is an IMEX Runge-Kutta solver but 
+  had the same issues as CVODE.
+
+  To gain a better understanding of the system, we analyzed 
+  the reaction rates from parameter sets that caused the 
+  time integration to fail.  The Gibbs free energy constraint 
+  gives the greatest difficulties to the time integrator.  To 
+  see this, consider the expression for the equilibrium 
+  constant~\eqref{eq:ke}.
 
 \bibliographystyle{siam}
 \bibliography{chemkin}
