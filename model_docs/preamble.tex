@@ -7,11 +7,11 @@
 \usepackage[utf8]{inputenc} % Uses the utf8 input encoding
 \usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
 
-\usepackage[osf]{mathpazo} % Palatino as the main font
-\linespread{1.05}\selectfont % Palatino needs some extra spacing, here 5% extra
-\usepackage[scaled=.88]{beramono} % Bera-Monospace
-\usepackage[scaled=.86]{berasans} % Bera Sans-Serif
-\usepackage[euler-digits]{eulervm}
+%\usepackage[osf]{mathpazo} % Palatino as the main font
+%\linespread{1.05}\selectfont % Palatino needs some extra spacing, here 5% extra
+%\usepackage[scaled=.88]{beramono} % Bera-Monospace
+%\usepackage[scaled=.86]{berasans} % Bera Sans-Serif
+%\usepackage[euler-digits]{eulervm}
 
 \usepackage{booktabs,array} % Packages for tables
 
@@ -21,11 +21,17 @@
 \usepackage[norule]{footmisc} % Removes the horizontal rule from footnotes
 \usepackage{lastpage} % Counts the number of pages of the document
 
-\usepackage{natbib}
+%\usepackage{natbib}
 
 \usepackage[dvipsnames]{xcolor}  % Allows the definition of hex colors
 \definecolor{titleblue}{rgb}{0.16,0.24,0.64} % Custom color for the title on the title page
-\definecolor{linkcolor}{rgb}{0,0,0.42} % Custom color for links - dark blue at the moment
+%\definecolor{linkcolor}{rgb}{0,0,0.42} % Custom color for links - dark blue at the moment
+\definecolor{linkcolor}{RGB}{155,0,0}
+\definecolor{citecolor}{RGB}{0,100,115}
+\definecolor{urlcolor}{RGB}{89,22, 175}
+%\definecolor{linkcolor}{red!50!black}
+%\definecolor{citecolor}{blue!50!black}
+%\definecolor{urlcolor}{blue!80!black}
 
 \DeclareFixedFont{\textcap}{T1}{phv}{bx}{n}{1.5cm} % Font for main title: Helvetica 1.5 cm
 \DeclareFixedFont{\textaut}{T1}{phv}{bx}{n}{0.8cm} % Font for author name: Helvetica 0.8 cm
@@ -123,6 +129,7 @@
 \newcommand{\molefrac}[1]{x^{f}_{#1}}
 \newcommand{\moleconc}[1]{\left[x_{#1}\right]}
 \newcommand{\heatrate}{\dot{Q}}
+\newcommand{\moles}[1]{x_{#1}}
 
 \newcommand{\Sop}{\boldsymbol{\mathcal{S}}}
 \newcommand{\rrc}{\dot{\boldsymbol{\upsilon}}}
