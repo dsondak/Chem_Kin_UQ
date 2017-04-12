@@ -90,4 +90,84 @@ would of course also need to provide a form for the enthalpy and a form for
 entropy for the catchall species since we are now dealing with a reversible 
 reaction.  
 
+These worked amazingly at first but ultimately led to numerical problems.
 
+\subsection{Transition Matrix Formulaton}
+We are once again re-thinking the inadequacy formulation.  The inadequacy 
+formulation takes the usual form,
+\begin{align}
+  \odeone{\mathbf{x}}{\time} = \mathbf{f}\lr{\mathbf{x}, T} + \mathbf{h}\lr{\mathbf{x}, T}.
+\end{align}
+We consider the inadequacy model $\mathbf{h}$ in the form,
+\begin{align}
+  \mathbf{h}\lr{\mathbf{x}, T} = A\widetilde{\mathbf{x}} + N_{A}\widehat{\mathbf{x}}.
+  \label{eq:trans_inad}
+\end{align}
+In~\eqref{eq:trans_iand}, $A$ is the species to atoms transition matrix and 
+$N_{A}$ is a matrix whose columns span the nullspace of $A$.  The quantities 
+$\widetilde{\mathbf{x}}$ and $\widehat{\mathbf{x}}$ are random variables. 
+Note that we must find a way to build the temperature dependence into 
+these perturbations.  The transition matrix $A$ has size $\na\times\ns$. 
+For the \ce{H2}/\ce{O2} system, using the reduced species set, the 
+transition matrix is
+\begin{align}
+  A = 
+  \begin{bmatrix}
+    2 & 0 & 1 & 0 & 1 & 1 & 2 \\
+    0 & 2 & 0 & 1 & 1 & 2 & 1
+  \end{bmatrix}.
+\end{align}
+Note that the total number of atoms of each time is given by 
+\begin{align}
+  \mathbf{a}_{\textrm{tot}} = A\mathbf{x}.
+\end{align}
+We know that the total number of atoms is conserved.
+Thus
+\begin{align}
+  0 = \odeone{\mathbf{a}_{\textrm{tot}}}{\time} = 
+  A \odeone{\mathbf{x}}{\time} = A\rr.
+\end{align}
+Solutions to $A\mathbf{x} = 0$ are given by 
+\begin{align}
+  \mathbf{x} = 
+  \begin{bmatrix} -1/2 \\ 0 \\ 1 \\ 0 \\ 0 \\ 0 \\ 0 \end{bmatrix}x_{3} 
+  + 
+  \begin{bmatrix} 0 \\ 1/2 \\ 0 \\ 1 \\ 0 \\ 0 \\ 0 \end{bmatrix}x_{4} 
+  + 
+  \begin{bmatrix} -1/2 \\ \displaystyle -1/2 \\ 0 \\ 0 \\ 1 \\ 0 \\ 0 \end{bmatrix}x_{5} 
+  + 
+  \begin{bmatrix} -1/2 \\ -1 \\ 0 \\ 0 \\ 0 \\ 1 \\ 0 \end{bmatrix}x_{6} 
+  + 
+  \begin{bmatrix} -1 \\ -1/2 \\ 1 \\ 0 \\ 0 \\ 0 \\ 1 \end{bmatrix}x_{7}.
+\end{align}
+The dimension of the null space is therefore $5$.  It may be that in general 
+the dimension of the nullspace of $A$ is $\ns - \na$ but I don't have a 
+proof of this at this exact moment.
+
+The form of~\eqref{eq:trans_inad} is such that we are perturbing the 
+reduced model in the direction of range of $A$ as well as the direction 
+of the null space of $A$.  The first perturbation (in the direction 
+of the range of $A$) may result in violations of conservation of atoms.
+
+We now consider conservation of atoms.  It may be necessary to perturb
+the total atoms to guarantee that atoms are conserved.  We introduce 
+the virutal species $\xv$ to help enforce conservation.  Thus, 
+\begin{align}
+  \mathbf{x}_{\textrm{tot}} = A\mathbf{x} + \xv
+\end{align}
+where $\xv$ is a vector containing the virtual species and acting 
+as a correction to guarantee conservation.  Now we have 
+\begin{align}
+  0 = \odeone{\mathbf{x}_{\textrm{tot}}}{\time} &= A\odeone{\mathbf{x}}{\time} + 
+       \odeone{\xv}{\time} \\
+    &= A\lr{\mathbf{f} + \mathbf{h}} + \odeone{\xv}{\time}.
+\end{align}
+Thus, the virtual species must evolve according to 
+\begin{align}
+  \odeone{\xv}{\time} = -A\lr{\mathbf{f} + \mathbf{h}}.
+\end{align}
+
+\begin{tcolorbox}
+  WARNING! The dimensions of this formulation don't even
+           make sense.  Need to rethink everything.
+\end{tcolorbox}

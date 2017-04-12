@@ -1,5 +1,5 @@
 %\usepackage[bottom=10em]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
-\usepackage[margin=1.0in]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
+\usepackage[margin=0.9in]{geometry} % Reduces the whitespace at the bottom of the page so more text can fit
 
 \usepackage[english]{babel} % English language
 \usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
@@ -9,13 +9,16 @@
 
 %\usepackage[osf]{mathpazo} % Palatino as the main font
 %\linespread{1.05}\selectfont % Palatino needs some extra spacing, here 5% extra
+\usepackage{kpfonts}
+\mathversion{sf}
 %\usepackage[scaled=.88]{beramono} % Bera-Monospace
 %\usepackage[scaled=.86]{berasans} % Bera Sans-Serif
+
 %\usepackage[euler-digits]{eulervm}
 
 \usepackage{booktabs,array} % Packages for tables
 
-\usepackage{amsmath} % For typesetting math
+\usepackage{amsmath, amsfonts} % For typesetting math
 \usepackage{graphicx} % Required for including images
 \usepackage{etoolbox}
 \usepackage[norule]{footmisc} % Removes the horizontal rule from footnotes
@@ -50,6 +53,7 @@
 
 % For color boxes
 \usepackage{tcolorbox}
+\tcbset{colback=red!5!white,colframe=red!75!black}
 
 % For chemistry
 \usepackage{mhchem}
@@ -95,10 +99,12 @@
 \newcommand{\xd}{\mathbf{x}^{D}}
 \newcommand{\nrr}{M_{R}}
 \newcommand{\nsr}{N_{R}}
+\newcommand{\ns}{N}
 \newcommand{\na}{N_{a}}
 \newcommand{\xr}{\mathbf{x}^{R}}
 \newcommand{\xs}{\mathbf{x}^{S}}
 \newcommand{\x}{\mathbf{x}}
+\newcommand{\xv}{\mathbf{x}^{v}}
 \newcommand{\pars}{\omega}
 
 \newcommand{\rrd}{\dot{\boldsymbol{\omega}}^{D}}
