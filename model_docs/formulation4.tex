@@ -1,0 +1,131 @@
+\subsection{Transition Matrix Formulaton}
+We are once again re-thinking the inadequacy formulation.  The inadequacy 
+formulation takes the usual form,
+\begin{align}
+  \odeone{\mathbf{x}}{\time} = \mathbf{f}\lr{\mathbf{x}, T} + \mathbf{h}\lr{\mathbf{x}, T}.
+\end{align}
+We consider the inadequacy model $\mathbf{h}$ in the form,
+\begin{align}
+  \mathbf{h}\lr{\mathbf{x}, T} = A^{T}\widetilde{\mathbf{x}} + B\widehat{\mathbf{x}}.
+  \label{eq:trans_inad}
+\end{align}
+In~\eqref{eq:trans_inad}, $A$ is the species to atoms transition matrix and 
+$B$ is a matrix whose columns span the nullspace of $A$.  The quantities 
+$\widetilde{\mathbf{x}}\in\mathbb{R}^{\na}$ and 
+$\widehat{\mathbf{x}}\in\mathbb{R}^{\ns-\na}$ are random variables. 
+Note that we must find a way to build the temperature dependence into 
+these perturbations.  Moreover, these perturbations may have a nonlinear 
+form; they are not necessarily the species and atoms from the reduced model.  
+The transition matrix $A$ has size $\na\times\ns$. 
+For the \ce{H2}/\ce{O2} system, using the reduced species set, the 
+transition matrix is
+\begin{align}
+  A = 
+  \begin{bmatrix}
+    2 & 0 & 1 & 0 & 1 & 1 & 2 \\
+    0 & 2 & 0 & 1 & 1 & 2 & 1
+  \end{bmatrix}.
+\end{align}
+Note that the total number of atoms of each type is given by 
+\begin{align}
+  \mathbf{a}_{\textrm{tot}} = A\mathbf{x}.
+\end{align}
+We know that the total number of atoms is conserved.
+Thus
+\begin{align}
+  0 = \odeone{\mathbf{a}_{\textrm{tot}}}{\time} = 
+  A \odeone{\mathbf{x}}{\time} = A\mathbf{f}
+\end{align}
+Solutions to $A\mathbf{x} = 0$ are given by 
+\begin{align}
+  \mathbf{x} = 
+  \begin{bmatrix} -1/2 \\ 0 \\ 1 \\ 0 \\ 0 \\ 0 \\ 0 \end{bmatrix}x_{3} 
+  + 
+  \begin{bmatrix} 0 \\ 1/2 \\ 0 \\ 1 \\ 0 \\ 0 \\ 0 \end{bmatrix}x_{4} 
+  + 
+  \begin{bmatrix} -1/2 \\ \displaystyle -1/2 \\ 0 \\ 0 \\ 1 \\ 0 \\ 0 \end{bmatrix}x_{5} 
+  + 
+  \begin{bmatrix} -1/2 \\ -1 \\ 0 \\ 0 \\ 0 \\ 1 \\ 0 \end{bmatrix}x_{6} 
+  + 
+  \begin{bmatrix} -1 \\ -1/2 \\ 1 \\ 0 \\ 0 \\ 0 \\ 1 \end{bmatrix}x_{7}.
+\end{align}
+The dimension of the null space is therefore $5$.  It may be that in general 
+the dimension of the nullspace of $A$ is $\ns - \na$ but I don't have a 
+proof of this at this exact moment.
+
+The form of~\eqref{eq:trans_inad} is such that we are perturbing the 
+reduced model in the direction of range of $A$ as well as the direction 
+of the null space of $A$.  The first perturbation (in the direction 
+of the range of $A$) may result in violations of conservation of atoms.
+To see this premultiply~\eqref{eq:trans_inad} by $A$.
+\begin{align}
+  &A\odeone{\mathbf{x}}{\time} = A\mathbf{f} + A\mathbf{h} \\
+  \Rightarrow &\odeone{\mathbf{a}}{\time} = A\mathbf{f} + A\mathbf{h} \\
+              &= \underbrace{A\mathbf{f}}_{0} + 
+                 AA^{T}\widetilde{\mathbf{x}} + 
+                 \underbrace{AB}_{0}\widehat{\mathbf{x}} \\
+              &= AA^{T}\widetilde{\mathbf{x}} \neq 0.
+\end{align}
+
+We now consider conservation of atoms.  It may be necessary to perturb
+the total atoms to guarantee that atoms are conserved.  We introduce 
+the virutal species $\xv$ to help enforce conservation.  Thus, 
+\begin{align}
+  \mathbf{x}_{\textrm{tot}} = A\mathbf{x} + \xv
+\end{align}
+where $\xv$ is a vector containing the virtual species and acting 
+as a correction to guarantee conservation.  Now we have 
+\begin{align}
+  0 = \odeone{\mathbf{x}_{\textrm{tot}}}{\time} &= A\odeone{\mathbf{x}}{\time} + 
+       \odeone{\xv}{\time} \\
+    &= A\lr{\mathbf{f} + \mathbf{h}} + \odeone{\xv}{\time}.
+\end{align}
+Thus, the virtual species must evolve according to 
+\begin{align}
+  \odeone{\xv}{\time} = -A\lr{\mathbf{f} + \mathbf{h}}.
+\end{align}
+
+We could rewrite our system in a more compact form as 
+\begin{align}
+  \odeone{\mathbf{x}}{\time} &= \mathbf{f} + M\pert \label{eq:gen_inad} \\
+  \odeone{\xv}{\time} &= -A\lr{\mathbf{f} + M\pert} \label{eq:xv_evo}.
+\end{align}
+Note that~\eqref{eq:xv_evo} can be written as 
+\begin{align}
+  \odeone{\xv}{\time} = -AM\pert.
+\end{align}
+
+At this point we have conservation.  We are still missing a form 
+for the perturbations $\pert$ and we still have not said anything 
+about positivity.  Positivity requires,
+\begin{align}
+  x_{i}    &: \quad f_{i} + M_{ij}\pertk{j} \geq 0 
+       \quad \textrm{for} \quad x_{i} = 0 \\
+  x_{k}^{v}&: \quad -A_{kj}M_{jl}\pertk{l} \geq 0 
+       \quad \textrm{for} \quad \xvk{k} = 0
+\end{align}
+If we choose $M_{ij}\pertk{j} = \alpha_{i}f_{i} + \lambda_{i}x_{i}$ 
+then we guarantee that $M_{ij}\pertk{k} \to \epsilon_{i}$ as 
+$x_{i} \to 0$.  Then 
+\begin{align}
+  \odeone{x_{i}}{\time} &= f_{i} + \lr{\alpha_{i}f_{i} + \lambda_{i}x_{i}} \\
+  \odeone{x_{k}^{v}}{\time} &= -A_{kl}\lr{\alpha_{l}f_{l} + \lambda_{l}x_{l}}.
+\end{align}
+If $\alpha_{l} = \alpha$ then 
+\begin{align}
+  \odeone{x_{k}^{v}}{\time} &= -A_{kl}\lambda_{l}x_{l}.
+\end{align}
+If we require $\lambda_{l} \leq 0$ then the virtual species 
+will become active.  However, we would still need to provide 
+a mechanism by which the virtual species can impact the 
+actual species.
+
+\begin{tcolorbox}[arc is angular, title=Some thoughts...]
+  \begin{itemize}
+    \item Think of a way to put a contribution of the 
+          virtual species into the actual species.
+    \item Another formulation using some kind of progress 
+          variable?  This variable would be off at 
+          equilibria and on otherwise.
+  \end{itemize}
+\end{tcolorbox}

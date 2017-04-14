@@ -1,0 +1,37 @@
+\subsection{Initial Formulation}
+This initial formulation is due to Rebecca's thesis work.  We augment the species in the 
+reduced model by $\na$ ``catchall'' species which are intended to mimic the effect of the 
+species that were neglected in going from the detailed to the reduced model.  Catchall 
+species and their quantities are denoted with a supersript $\prime$.  The species 
+concentrations are now given by 
+$\x = \left[x_{1}, \ldots, \x_{\nsr}, \x_{\nsr+1}, \ldots, \x_{\nsr + \na}\right]^{\dagger}$ 
+where $\na$ is the number of atoms in the system.  The enthalpies are augmented similarly.  
+We therefore introduce an enhanced reduced model of the form,
+\begin{align}
+  \odeone{\x}{t} &= \rr + \left[\Sop \x + \rrc\right] \label{eq:inad_reb} \\
+  \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}
+                         {\displaystyle \cp\lr{T}\cdot\x}. \label{eq:energy_reb}
+\end{align}
+The operators $\Sop$ and $\rrc$ are stochastic in nature and have several parameters that 
+must be calibrated.  We must also specify a form for the enthalpies of the ``catchall'' 
+species.  This was done by assuming a simple linear temperature dependence of the specific 
+heat on the temperature.  In general,  
+\begin{align}
+  \hic{k} = \sum_{i=0}^{p}{\alpha_{ki}T^{i}}
+\end{align}
+and 
+\begin{align}
+  \cpic{k} = \sum_{i=1}^{p}{i\alpha_{ki}T^{i-1}}
+\end{align}
+where $p-1$ is the polynomial order being used to represent the specific heat.  Note that 
+using~\eqref{eq:s_cp_rel} we have the additional relationship 
+\begin{align}
+  \sic{k} = \gamma_{k0} + \alpha_{k1}\ln\lr{T} + \sum_{i=2}^{p}{\frac{i}{i-1}\alpha_{ki}T^{i-1}}.
+\end{align}
+When $p=2$ we have simply 
+\begin{align}
+  \hic{k}  &= \alpha_{k0} + \alpha_{k1}T + \alpha_{k2}T^{2} \\ 
+  \cpic{k} &= \alpha_{k1} + 2\alpha_{k2}T \\
+  \sic{k}  &= \gamma_{k0}  + \alpha_{k1}\ln\lr{T} + 2\alpha_{k2}T.
+\end{align}
+

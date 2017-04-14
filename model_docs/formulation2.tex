@@ -1,0 +1,20 @@
+\subsubsection{Global Temperature Dependence}
+The inadequacy portion of the model is contained in a linear part $\Sop$ and a nonlinear part 
+$\rrc$ which are both temperature independent.  Temperature dependence is built in through 
+a prefator $g\lr{T}$.  
+\begin{align}
+  \odeone{\x}{t} &= \rr + g\lr{T}\left[\Sop \x + \rrc\right] \\
+  \odeone{T}{t}  &= \frac{-\displaystyle \h\lr{T}\cdot\odeone{\x}{t} + \dot{\mathcal{Q}}}{\displaystyle \cp\lr{T}\cdot\x}.
+\end{align}
+Two forms for the prefactor are the Arrhenius form and the hyperbolic tangent switch. 
+The Arrhenius form is
+\begin{align}
+  g_{A}\lr{T} = \exp\lr{-T_{ag} / T}
+\end{align}
+where $T_{ag}$ is the global activation temperature.  The global hyperbolic switch has 
+the form
+\begin{align}
+  g_{S}\lr{T} = \tanh\lr{T-T_{ig}} = \tanh\lr{T - T_{adg}}
+\end{align}
+where $T_{ig}$ and $T_{adg}$ are the global ignition temperature and the global 
+adiabatic flame temperature.

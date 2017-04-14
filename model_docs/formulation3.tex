@@ -1,0 +1,22 @@
+\subsection{Dissociation-Recombination Reactions}
+The linear part of the original inadequacy formulation~\ref{eq:inad_reb} is very 
+high-dimensional.  We would like to reduce the dimensionality of the inadequacy 
+formulation.  This will provide some additional flexibility when introducing a 
+temperature dependence (e.g. we may be able to get with something more fine-grained 
+than a global temperature dependence).
+
+As a first step, we can introduce a set of reversible dissociation-recombination 
+(D-R) reactions.  These reactions will allow species to dissociate into elemental 
+catchall species.  For example, the \ce{H2}-\ce{O2} system consists of the set 
+of species $\left\{\ce{H}, \ce{O}, \ce{H2}, \ce{O2}, \ce{OH}, \ce{H2O}, \ce{HO2}\right\}$. 
+The set of catchall species is $\left\{\ce{H}^{\prime}, \ce{O}^{\prime}\right\}$. 
+An example of a D-R reaction would be 
+\begin{align}
+  \ce{H2O <=> 2H^{\prime} + O^{\prime}}.
+\end{align} 
+We would then form the ODE system as usual and include this new reaction.  We 
+would of course also need to provide a form for the enthalpy and a form for 
+entropy for the catchall species since we are now dealing with a reversible 
+reaction.  
+
+These worked amazingly at first but ultimately led to numerical problems.
