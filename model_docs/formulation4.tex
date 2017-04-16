@@ -94,10 +94,15 @@ Note that~\eqref{eq:xv_evo} can be written as
 \begin{align}
   \odeone{\xv}{\time} = -AM\pert.
 \end{align}
+In equations~\eqref{eq:gen_inad} and~\eqref{eq:xv_evo} we have used 
+\begin{align}
+  M = \left[A^{T} \ B\right] \quad \textrm{and} \quad 
+  \pert = \begin{bmatrix} \widetilde{x} \\ \widehat{x} \end{bmatrix}.
+\end{align}
 
 At this point we have conservation.  We are still missing a form 
 for the perturbations $\pert$ and we still have not said anything 
-about positivity.  Positivity requires,
+about nonnegativity.  Nonnegativity requires,
 \begin{align}
   x_{i}    &: \quad f_{i} + M_{ij}\pertk{j} \geq 0 
        \quad \textrm{for} \quad x_{i} = 0 \\
@@ -105,7 +110,7 @@ about positivity.  Positivity requires,
        \quad \textrm{for} \quad \xvk{k} = 0
 \end{align}
 If we choose $M_{ij}\pertk{j} = \alpha_{i}f_{i} + \lambda_{i}x_{i}$ 
-then we guarantee that $M_{ij}\pertk{k} \to \epsilon_{i}$ as 
+then we guarantee that $M_{ij}\pertk{j} \to \epsilon_{i}$ as 
 $x_{i} \to 0$.  Then 
 \begin{align}
   \odeone{x_{i}}{\time} &= f_{i} + \lr{\alpha_{i}f_{i} + \lambda_{i}x_{i}} \\
