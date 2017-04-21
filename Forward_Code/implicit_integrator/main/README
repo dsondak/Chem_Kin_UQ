@@ -1,0 +1,8 @@
+To build just type make.
+
+If you want to switch between different models 
+(e.g. detailed vs. reduced) then you'll need to 
+make changes in the INPUT PARAMETERS section of 
+the driver script (kinetics.c) and recompile. 
+Hopefully I'll create an input file again in the 
+nearish future.
