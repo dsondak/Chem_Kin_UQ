@@ -46,9 +46,19 @@
 int main()
 {
 
+/*********************************
+ *
+ * INPUT PARAMETERS
+ *
+ *********************************/
+
+  // Which model do you want to run?
   bool detailed = false;
   bool reduced  = true;
 
+  // These things could probably be read in 
+  // as part of the HDF5 data file.  But it's 
+  // not structured that way yet...
   unsigned int Nt = 50000; // # of time-steps
   unsigned int Ns = 7;     // Reduced species
   unsigned int n_eq = 9;   // Make reduced default
@@ -65,23 +75,21 @@ int main()
      printf("Model not recognized:  Assuming reduced.");
   }
 
-  /***********************************
-  * Read in data and compute RHS 
-  * with Antioch using detailed and 
-  * reduced data sets.
-  ***********************************/
+  char solution_fname[20];
+  strcpy(solution_fname, "reduced_solution.h5");
+  char rhs_fname[15];
+  strcpy(rhs_fname, "reduced_rhs.h5");
+
+  std::string thermo_fname("nasa7_thermo_reduced.xml");
+  std::string reaction_set_fname("reduced_mech_5.xml");
 
   // Read in data from HDF5 files
-  truth_data solution("reduced_solution.h5", 1, 1, Nt, n_eq);
+  truth_data solution(solution_fname, 1, 1, Nt, n_eq);
 
   // Moles of N2 is constant so just set it here
   double x_N2 = solution.observation_data[n_eq - 2];
 
   double heating_rate = 5.0e+06; // Heating rate
-
-  /***********************************
-   * Set up reactions with Antioch
-   ***********************************/
 
   // Define species 
   std::vector<std::string> species_str_list;
@@ -95,17 +103,23 @@ int main()
   species_str_list.push_back("H2O");
   species_str_list.push_back("N2");
 
+  /* END INPUT PARAMETERS */
+
+  /***********************************
+   * Set up reactions with Antioch
+   ***********************************/
+
   // Get chemistry for species involved in this reaction
   Antioch::ChemicalMixture<double> chem_mixture( species_str_list );
 
   //// Thermodynamics
   Antioch::NASAThermoMixture<double, Antioch::NASA7CurveFit<double> > nasa_mixture( chem_mixture );
-  Antioch::read_nasa_mixture_data( nasa_mixture, "nasa7_thermo_reduced.xml", Antioch::XML );
+  Antioch::read_nasa_mixture_data( nasa_mixture, thermo_fname, Antioch::XML );
   Antioch::NASAEvaluator<double, Antioch::NASA7CurveFit<double> > thermo(nasa_mixture); // Thermodynamics
 
   // Reactions
   Antioch::ReactionSet<double> reaction_set( chem_mixture );
-  Antioch::read_reaction_set_data_xml<double>( "reduced_mech_5.xml", true, reaction_set );
+  Antioch::read_reaction_set_data_xml<double>(reaction_set_fname, true, reaction_set );
   Antioch::KineticsEvaluator<double> kinetics(reaction_set, 0); // Reactions
 
   // Set some constants
@@ -204,8 +218,9 @@ int main()
 
   } // end time loop
 
-  create_file("reduced_rhs.h5", Nt, Ns);
-  write_file(fx, fT, "reduced_rhs.h5", Nt, Ns);
+  
+  create_file(rhs_fname, Nt, Ns);
+  write_file(fx, fT, rhs_fname, Nt, Ns);
 
   return(0);
 
