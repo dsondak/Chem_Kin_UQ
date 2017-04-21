@@ -1,0 +1,20 @@
+This directory hinges around the program 
+calc_rhs.c.  The goal of the program is to 
+compute RHS functions using the RHS from 
+the reduced model.
+
+It reads in a solution from the detailed 
+or reduced model (specified by the user)
+and uses Antioch to compute the RHS at each 
+time step using the reaction scheme from 
+the reduced model.
+
+The results are saved in ``reduced_rhs.h5'' 
+or ``detailed_rhs.h5'' depending on the 
+model that was run.
+
+If the user wants to change parameters then 
+they need to do so in the main function 
+under INPUT PARAMETERS and then recompile. 
+This should be in an input file but it's 
+not yet.
