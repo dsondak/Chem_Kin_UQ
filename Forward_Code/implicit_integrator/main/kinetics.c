@@ -703,7 +703,7 @@ static int Jac(long int N, realtype t,
       molecular_weight    = R_universal / rxn.Chem_mixture->R(k);
       h_dot_mole_sources += rxn.Thermo->h(temp_cache, k) * molecular_weight * mole_sources[k];
       cp_dot_mole_sources+= rxn.Thermo->cp(temp_cache, k) * molecular_weight * mole_sources[k];
-      cp_dot_species     += rxn.Thermo->cp(temp_cache, k) * molecular_weight * molar_densities[k];
+      cp_dot_species     += rxn.Thermo->cp(temp_cache, k) * molecular_weight * Ith(y,k+1);
       h_dot_J_T          += rxn.Thermo->h(temp_cache, k) * molecular_weight * 
                               (mole_sources[k] * dV_dT + dmole_sources_dT[k] * V) ;
       dcp_dT_dot_species += rxn.Thermo->dcp_dT(temp_cache, k) * molecular_weight * Ith(y, k+1);
