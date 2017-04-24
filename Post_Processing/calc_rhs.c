@@ -37,6 +37,10 @@
 #include "antioch/nasa_mixture_parsing.h"
 #include <antioch/read_reaction_set_data.h>
 
+// Eigen stuff
+#include <Eigen/Dense>
+using Eigen::MatrixXd;
+
 /*********************************
  *
  * Main Program
@@ -169,7 +173,11 @@ int main()
       }
       molar_densities[Ns] = x_N2 / V;
 
-      // Get some thermodynamic data for each species
+      // Get derivatives of volume
+      double dV_dxj = R_universal * T / press;
+      double dV_dT  = R_universal * T / press;
+
+      // Gibbs free energy for each species
       std::vector<double> h_RT_minus_s_R(Ns+1, 0.0);
       thermo.h_RT_minus_s_R(temp_cache, h_RT_minus_s_R);
 
@@ -203,18 +211,54 @@ int main()
           fx[Ns*n + k] = mole_sources[k] * V;
       }
 
+      Eigen::MatrixXd J(n_eq, n_eq);
+      for (unsigned int k = 0; k < Ns+1; k++) {
+          for (unsigned int j = 0; j < Ns+1; j++) {
+              J(k, j) = dmole_sources_dX_s[k][j] * V + mole_sources[k] * dV_dxj;
+          }
+          J(k, n_eq-1) = dmole_sources_dT[k] * V + mole_sources[k] * dV_dT;
+      }
+
       // Energy equation
       double h_dot_mole_sources = 0.0;
+      double cp_dot_mole_sources= 0.0;
       double cp_dot_species     = 0.0;
+      double h_dot_J_T          = 0.0;
+      double dcp_dT_dot_species = 0.0;
       double molecular_weight   = 0.0;
 
       for (unsigned int k = 0; k < Ns; k++) {
           molecular_weight    = R_universal / chem_mixture.R(k);
           h_dot_mole_sources += thermo.h(temp_cache, k) * molecular_weight * mole_sources[k];
+          cp_dot_mole_sources+= thermo.cp(temp_cache, k) * molecular_weight * mole_sources[k];
           cp_dot_species     += thermo.cp(temp_cache, k) * molecular_weight * xs[k];
+          h_dot_J_T          += thermo.h(temp_cache, k) * molecular_weight * 
+                                  (mole_sources[k] * dV_dT + dmole_sources_dT[k] * V) ;
+          dcp_dT_dot_species += thermo.dcp_dT(temp_cache, k) * molecular_weight * xs[k];
       }
 
+      double cp_dot_species_2 = cp_dot_species * cp_dot_species;
+
       fT[n] = (-h_dot_mole_sources * V + heating_rate) / cp_dot_species;
+
+      // Energy RHS derivatives wrt species
+      double num1;
+      double num2;
+      for (unsigned int j = 0; j < Ns+1; j++) {
+          double h_dot_J = 0.0;
+          for (unsigned int k = 0; k < Ns+1; k++) {
+              molecular_weight    = R_universal / chem_mixture.R(k);
+              h_dot_J += thermo.h(temp_cache, k) * molecular_weight * dmole_sources_dX_s[k][j];
+          }
+          num1 = -cp_dot_species * (h_dot_J * V + h_dot_mole_sources * dV_dxj);
+          num2 = (-h_dot_mole_sources * V + heating_rate) * thermo.cp(temp_cache, j);
+          J(n_eq-1, j) = (num1 - num2) / cp_dot_species_2;
+      }
+
+      // Energy RHS derivative wrt temperature
+      num1 = -cp_dot_species * (h_dot_J_T + cp_dot_mole_sources * V);
+      num2 = (-h_dot_mole_sources * V + heating_rate) * dcp_dT_dot_species;
+      J(n_eq-1,n_eq-1) = (num1 - num2) / cp_dot_species_2;
 
   } // end time loop
 
