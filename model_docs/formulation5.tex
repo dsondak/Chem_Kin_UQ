@@ -1,0 +1,77 @@
+\subsection{State Perturbation}
+In the previous formulations, we have focused on directly
+perturbing the right-hand-side of the reduced model.  This 
+has proven very challenging.  In particular, it is quite 
+difficult to create a general perturbation that respects 
+all the constraints.  The most challenging of these 
+appears to be satisfaction of non-negativity.
+
+Another viewpoint that may prove useful is to perturb the 
+actual state at the discrete level.  For example, suppose 
+we do a simple forward Euler temporal discretization.  
+Then, 
+\begin{align}
+  \x^{\lr{n+1}} = \x^{\lr{n}} + \Delta t \mathbf{f}\lr{\x^{\lr{n}}, T^{\lr{n}}} 
+       + \xi.
+\end{align}
+The basic idea is that the state that results from using 
+the reduced model is a perturbation of the state 
+that would result from the detailed model.  If we happened 
+to choose 
+\begin{align}
+  \xi \sim \mathcal{N}\lr{0,\Delta t}
+\end{align}
+then the perturbation would an induce a right-hand-side 
+perturbation in the form, 
+\begin{align}
+  \odeone{\x}{t} = \mathbf{f}\lr{\x, T} + \odeone{W}{t}
+  \label{eq:stoch_chem}
+\end{align}
+where $W$ is the stochastic Wiener process. Such a choice is 
+really just one simple example of a type of perturbation.  
+We would really like to introduce a perturbation that is 
+consistent with the way in which the detailed model is 
+reduced to the reduced model.  For example, if the model 
+reduction occurs by neglecting fast time-scales, then 
+errors are introduced through that reduction in accordance 
+with the significance of ignoring each species or reaction.  
+The choice of the state-perturbation may be guided by 
+considering actual reduction strategies in the literature.
+
+Many reduction strategies have been introduced throughout 
+the years.  Early reduction strategies include the 
+quasi-steady-state approximation and the partial-equilibrium 
+approximation.  More sophisticated methods include the 
+directed graph relation (DAG) method, computational 
+singular perturbation (CSP) -based methods and level of 
+importance (LOI) analysis.  Many mechanism-reduction 
+strategies do not rigorously consider effects of neglecting 
+certain time-scales.  The CSP makes an attempt at 
+rigorously understanding which reactions and species are 
+involved in processes that occur at very fast time-scales.  
+The CSP relies on a paramter $\epsilon_{M}$ which is a 
+ratio between the slowest fast time scale and the 
+fastest slow time scale.  If this parameter is small then 
+the CSP has successfully separated the fast and slow 
+time scales.  If we consider $\epsilon_{M}$ as an 
+indication of the error in reduced models generated from 
+the CSP, then it may be interesting to choose the 
+state perturbation $\xi$ such that its variance is 
+proportional to this parameter.  In that way, when 
+$\epsilon_{M}$ is small the variance of $\xi$ can be 
+small since the reduced model is good whereas when 
+$\epsilon_{M}$ is large the variance of $\xi$ can be 
+large since the reduced model is probably not very 
+good.
+
+Interestingly, the form of the perturbed ODE presented in~\eqref{eq:stoch_chem} 
+is similar in form to that derived from the stochastic simulation algorithm.  
+Assuming the reactant populations are sufficiently large and that the 
+right-hand-side function does not change too much over a time interval 
+$\left[\left.t, t + \Delta t\right)\right.$ then the system satisfies 
+\begin{align}
+  x_{k}\lr{t + \Delta t} = x_{k} + \Delta t \sum_{j=1}^{M}{\nu_{kj}q_{j}V} + 
+        \sum_{j=1}^{M}{\nu_{kj}\sqrt{q_{j}}\mathcal{N}\lr{0,1}\sqrt{\Delta t}}.
+\end{align}
+
+
