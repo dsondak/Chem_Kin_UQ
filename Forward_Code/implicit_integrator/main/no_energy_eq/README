@@ -1,2 +1,9 @@
+This version of the kinetics solver does not solve for the temperature field 
+from an energy equation.  The temperature profile is read in from the 
+detailed model and passed to the RHS function along with all the other user 
+data.  The value of the temperature at a given internal CVODE iteration is 
+linearly interpolated from the temperature data given the internal CVODE 
+time.
+
 Must have detailed_data.h5 in this directory.  The temperature profile will 
 be read in from that file.
