@@ -1,0 +1,2 @@
+Must have detailed_data.h5 in this directory.  The temperature profile will 
+be read in from that file.
