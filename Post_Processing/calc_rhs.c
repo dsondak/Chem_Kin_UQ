@@ -149,14 +149,12 @@ int main()
       for (unsigned int k = 0; k < Ns; k++) {
           total_moles += xs[k];
       }
+      total_moles += x_N2;
 
       // Add in other species to get the total moles
       if (detailed) {
          double x_H2O2 = solution.observation_data[n_eq*n + n_eq - 3];
-         total_moles += x_H2O2 + x_N2;
-      }
-      else if (reduced) {
-         total_moles += x_N2;
+         total_moles += x_H2O2;
       }
 
       // Finally compute volume
