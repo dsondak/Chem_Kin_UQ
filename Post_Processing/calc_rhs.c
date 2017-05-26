@@ -72,9 +72,6 @@ int main()
   if (detailed) {
      n_eq = 10;
   }
-  else if (reduced) {
-     n_eq = 9;
-  }
   else {
      printf("Model not recognized:  Assuming reduced.");
   }
