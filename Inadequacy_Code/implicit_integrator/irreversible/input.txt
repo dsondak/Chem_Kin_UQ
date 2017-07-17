@@ -1,0 +1,42 @@
+#  -*-getpot-*-
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Input file for forward problem
+# 
+# The input parser supports a notion of sections which are defined by
+# the [section] syntax. You are allowed to have variables of the same
+# name so long as they are within unique section definitions.
+# 
+# $Id: input.txt 25123 2011-10-28 19:50:52Z karl $
+# ------------------------------------------------------------------------------
+
+#------------------------------------------
+# Global input variable definitions
+#------------------------------------------
+
+n_species        = 7     	      # Number of species
+n_atoms          = 2                  # Number of atoms
+n_inad           = 2		      # Number of inadequacy species
+n_inert          = 1                  # For inert species (e.g. N2)
+n_species_inad   = 2                  # Number of inadequacy species
+n_species_d      = 8                  # Number of species in detailed model
+n_phis           = 1                  # Number of phi ICs
+n_T              = 1                  # Number of initial temperatures
+n_heating        = 1                  # Number of heating rates
+Temperatures     = 0                  # Initial temperatures
+heat_rates       = 1                  # Heating rates
+TO               = 800.0              # Initial temperature
+heating_rate     = 5.0e+06            # Heating rate
+time_points      = 1.0e-06            # Sample every time_points
+num_times        = 14                 # Take this many samples
+n_times_d        = 15000              # Number of points in detailed solution profile
+num_reactions    = 5                  # Number of reactions in reduced model
+n_reactions_inad = 10                 # Number of reactions in inadequacy model
+fuel             = 2.0                # Initial fuel concentration (H2 here)
+oxidizer_i       = 1.0                # Initial oxidizer concentration (O2 here)
+nitrogen         = 3.78               # Initial N2 concentration
+thermo           = 'nasa7_thermo_inad.xml' # Input file for thermodynamics
+reactionset      = 'inad_rxn.xml'     # Input file for reactions
+dataset          = 'truth_data.h5'    # Datafile to write to
+time_ig          = 0.019462           # Ignition time of detailed model
+Tig              = 919.837099088      # Ignition temperature of detailed model
