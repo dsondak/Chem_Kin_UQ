@@ -10,6 +10,8 @@
 #include "chemistryJointPdf.h"
 #include <queso/GslVector.h>
 #include <queso/GslMatrix.h>
+#include <queso/VectorSpace.h>
+#include <queso/BasicPdfsBase.h>
 
 namespace QUESO {
 
@@ -45,10 +47,7 @@ double
 ChemistryJointPdf<V,M>::actualValue(const V& domainVector, const V* domainDirection, V* gradVector, M* hessianMatrix, V* hessianEffect) const
 {
   std::cout << "actual value is not implemented" << std::endl;
-  if (domainVector.sizeLocal() != this->m_domainSet.vectorSpace().dimLocal()) 
-  {
-    std::cout << "there is invalid input, this should be a queso error message" << std::endl;
-  }
+  queso_require_equal_to_msg(domainVector.sizeLocal(), this->m_domainSet.vectorSpace().dimLocal(), "invalid input");
 
   if (gradVector   ) *gradVector     = m_domainSet.vectorSpace().zeroVector();
   if (hessianMatrix) *hessianMatrix *= 0.;
