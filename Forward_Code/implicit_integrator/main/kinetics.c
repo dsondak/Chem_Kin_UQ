@@ -47,9 +47,14 @@
 
 #include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
-#include <cvode/cvode_dense.h>       /* prototype for CVDense */
-#include <sundials/sundials_dense.h> /* definitions DlsMat DENSE_ELEM */
-#include <sundials/sundials_types.h> /* definition of type realtype */
+//#include <cvode/cvode_dense.h>       /* prototype for CVDense */
+#include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
+#include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
+//#include <sundials/sundials_dense.h> /* definitions DlsMat DENSE_ELEM */
+//#include <sundials/sundials_types.h> /* definition of type realtype */
+#include <cvode/cvode_direct.h>        /* access to CVDls interface            */
+#include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
+
 #include <nlopt.h>                   /* nlopt optimization package */
 
 //antioch
@@ -80,7 +85,7 @@
    dense matrix starting from 0. */
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)       /* Ith numbers components 1..NEQ */
-#define IJth(A,i,j) DENSE_ELEM(A,i-1,j-1) /* IJth numbers rows,cols 1..NEQ */
+#define IJth(A,i,j) SM_ELEMENT_D(A,i-1,j-1) /* IJth numbers rows,cols 1..NEQ */
 
 
 /* Problem Constants */
@@ -96,8 +101,8 @@
 
 static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data);
 
-static int Jac(long int N, realtype t,
-               N_Vector y, N_Vector fy, DlsMat J, void *user_data,
+static int Jac(realtype t,
+               N_Vector y, N_Vector fy, SUNMatrix J, void *user_data,
                N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
 int mass_balance(unsigned int n_species, unsigned int n_atoms, 
@@ -134,10 +139,14 @@ int main()
 
   realtype reltol, t;
   N_Vector y, abstol;
+  SUNMatrix A;
+  SUNLinearSolver LS;
   void *cvode_mem;
   int flag;
 
   y = abstol = NULL;
+  A = NULL;
+  LS = NULL;
   cvode_mem = NULL;
 
   /*****************************
@@ -149,8 +158,12 @@ int main()
   std::string thermo_fname("nasa7_thermo_reduced.xml"); // thermo data file
   std::string reaction_set_fname("five_rxn.xml");    // reaction set file
 
+  //std::string thermo_fname("nasa7_thermo_detailed.xml"); // thermo data file
+  //std::string reaction_set_fname("detailed_rxn.xml");    // reaction set file
+
   // Ugly C syntax b/c using C HDF5 interface
   //char data_fname[21];
+  //strcpy(data_fname, "detailed_solution.h5");  // file to write solution to
   char data_fname[20];
   strcpy(data_fname, "reduced_solution.h5");  // file to write solution to
 
@@ -319,12 +332,26 @@ int main()
   if (check_flag(&flag, "CVodeSetMaxNumSteps", 1)) return(1);
 
   /* Call CVDense to specify the CVDENSE dense linear solver */
-  flag = CVDense(cvode_mem, n_eq);
-  if (check_flag(&flag, "CVDense", 1)) return(1);
+  //flag = CVDense(cvode_mem, n_eq);
+  //if (check_flag(&flag, "CVDense", 1)) return(1);
+
+  /* Create dense SUNMatrix for use in linear solves */
+  A = SUNDenseMatrix(n_eq, n_eq);
+  if(check_flag((void *)A, "SUNDenseMatrix", 0)) return(1);
+
+  /* Create dense SUNLinearSolver object for use by CVode */
+  LS = SUNDenseLinearSolver(y, A);
+  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+
+  /* Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode */
+  flag = CVDlsSetLinearSolver(cvode_mem, LS, A);
+  if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) return(1);
 
   /* Set the Jacobian routine to Jac (user-supplied) */
-  flag = CVDlsSetDenseJacFn(cvode_mem, Jac);
-  if (check_flag(&flag, "CVDlsSetDenseJacFn", 1)) return(1);
+  //flag = CVDlsSetDenseJacFn(cvode_mem, Jac);
+  //if (check_flag(&flag, "CVDlsSetDenseJacFn", 1)) return(1);
+  flag = CVDlsSetJacFn(cvode_mem, Jac);
+  if(check_flag(&flag, "CVDlsSetJacFn", 1)) return(1);
 
   /* Set user data */
   flag = CVodeSetUserData(cvode_mem, &rxnMain);
@@ -571,8 +598,8 @@ static int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)
  * Jacobian routine. Compute J(t,y) = df/dy. *
  */
 
-static int Jac(long int N, realtype t,
-               N_Vector y, N_Vector fy, DlsMat J, void *user_data,
+static int Jac(realtype t,
+               N_Vector y, N_Vector fy, SUNMatrix J, void *user_data,
                N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
 
