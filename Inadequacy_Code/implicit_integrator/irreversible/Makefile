@@ -1,7 +1,8 @@
-QUESO_DIR := /h1/dsondak/bin/queso
-ANTIOCH_DIR := /workspace/dsondak/antioch_build
-CVODE_DIR := /workspace/dsondak/sundials/install
-NLOPT_DIR := /workspace/dsondak/nlopt/install
+QUESO_DIR := /n/home01/dsondak/software/queso
+ANTIOCH_DIR := /n/home01/dsondak/software/antioch
+CVODE_DIR := /n/home01/dsondak/sundials/install
+NLOPT_DIR := /n/home01/dsondak/software/nlopt
+GRVY_DIR := /n/home01/dsondak/software/grvy
 
 INC_PATHS := \
 	-I. \
@@ -28,10 +29,11 @@ LIBS := \
 	-L$(CVODE_DIR)/lib -lsundials_cvode -lsundials_nvecserial -lm /usr/lib64/librt.so \
         -L$(NLOPT_DIR)/lib -lnlopt
 
-LINKFLAGS = -Wl,-rpath,/workspace/dsondak/sundials/install/lib
+LINKFLAGS = -Wl,-rpath,/n/home01/dsondak/software/antioch/lib,-rpath,/n/home01/dsondak/sundials/install/lib
 
 CXX = mpic++
-CXXFLAGS += -O3 -Wall -c -std=c++11
+CXXFLAGS += -Wall -O3 -c -std=c++11
+#CXXFLAGS += -Wall -O3 -c -std=c++0x
 
 default: ip-catchall
 
