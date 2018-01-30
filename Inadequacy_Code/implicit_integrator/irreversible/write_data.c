@@ -178,9 +178,9 @@ int write_file(std::vector<double>& time, std::vector<double>& sols, const char*
     char scen_str[2];
 
     // Initialize solution array
-    double truth_data[rows][cols] = {0.0};
-    double ignition_data[2] = {0.0};
-    double times[rows] = {0.0};
+    double truth_data[rows][cols];
+    double ignition_data[2];
+    double times[rows];
 
     // Set up solution array
     for (int i = 0; i < rows; i++)
