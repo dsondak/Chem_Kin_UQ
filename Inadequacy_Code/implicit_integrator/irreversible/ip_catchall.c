@@ -10,9 +10,11 @@
  *******************************************************************/
 
 #include "compute.h"
+#include <yaml-cpp/yaml.h>
 
 int main(int argc, char* argv[])
 {
+
   // Initialize QUESO environment
   MPI_Init(&argc,&argv);
   QUESO::FullEnvironment* env =

@@ -18,9 +18,8 @@
 
 // C libraries
 #include <stdio.h>
-#include <grvy.h>
+//#include <grvy.h>
 #include <cmath>
-#include <stdio.h>
 #include <fstream>
 #include <stdlib.h>
 #include <iostream>
@@ -61,6 +60,9 @@
 #include <Eigen/Eigenvalues>
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+
+// YAML
+#include <yaml-cpp/yaml.h>
 
 void computeAllParams(const QUESO::FullEnvironment& env) {
 
@@ -105,67 +107,131 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
               << std::endl;
   }
 
+  // Load file
+  YAML::Node input = YAML::LoadFile("filename.yaml");
+
+  // read data
+  int n_species = input["n_species"].as<int>();
+  printf("n_species = %2.1i\n", n_species);
+  int n_atoms = input["n_atoms"].as<int>();
+  printf("n_atoms = %2.1i\n", n_atoms);
+  int n_inad = input["n_inad"].as<int>();
+  printf("n_inad = %2.1i\n", n_inad);
+  int n_inert = input["n_inert"].as<int>();
+  printf("n_inert = %2.1i\n", n_inert);
+  int n_species_inad = input["n_species_inad"].as<int>();
+  printf("n_species_inad = %2.1i\n", n_species_inad);
+  int n_species_d = input["n_species_d"].as<int>();
+  printf("n_species_d = %2.1i\n", n_species_d);
+  int n_phis = input["n_phis"].as<int>();
+  printf("n_phis = %2.1i\n", n_phis);
+  int n_heating = input["n_heating"].as<int>();
+  printf("n_heating = %2.1i\n", n_heating);
+  int n_T = input["n_T"].as<int>();
+  printf("n_T = %2.1i\n", n_T);
+  double timePoint = input["time_points"].as<double>();
+  printf("timePoint = %25.16f\n", timePoint);
+  int n_times = input["num_times"].as<int>();
+  printf("n_times = %2.1i\n", n_times);
+  int n_times_d = input["n_times_d"].as<int>();
+  printf("n_times_d = %2.1i\n", n_times_d);
+  int n_reactions = input["num_reactions"].as<int>();
+  printf("n_reactions = %2.1i\n", n_reactions);
+  int n_reactions_inad = input["n_reactions_inad"].as<int>();
+  printf("n_reactions_inad = %2.1i\n", n_reactions_inad);
+  double fuel = input["fuel"].as<double>();
+  printf("fuel = %25.16f\n", fuel);
+  double oxidizer_i = input["oxidizer_i"].as<double>();
+  printf("oxidizer_i = %25.16f\n", oxidizer_i);
+  double nitrogen = input["nitrogen"].as<double>();
+  printf("nitrogen = %25.16f\n", nitrogen);
+  int heat_rates_in = input["heat_rates"].as<int>();
+  printf("heat_rates_in = %2.1i\n", heat_rates_in);
+  int init_temperature_in = input["Temperatures"].as<int>();
+  printf("init_temperature_in = %2.1i\n", init_temperature_in);
+  double TO = input["TO"].as<double>();
+  printf("TO = %25.16f\n", TO);
+  double heating_rate = input["heating_rate"].as<double>();
+  printf("heating_rate = %25.16f\n", heating_rate);
+  double time_ig = input["time_ig"].as<double>();
+  printf("time_ig = %25.16f\n", time_ig);
+  double Tig = input["Tig"].as<double>();
+  printf("Tig = %25.16f\n", Tig);
+
+  std::string thermo_filename = input["thermo_filename"].as<std::string>();
+  printf("thermo_filename = %s\n", thermo_filename.c_str());
+  std::string reaction_filename = input["reaction_filename"].as<std::string>();
+  printf("reaction_filename = %s\n", reaction_filename.c_str());
+  std::string data_filename = input["data_filename"].as<std::string>();
+  printf("data_filename = %s\n", data_filename.c_str());
+  //std::vector<double> distdata = input["distortion_coefficients"]["data"].as<std::vector<double>>();
+
+
   // Input parameters
-  int n_species;           // Number of species (not including extras for N2 and H2O2)
-  int n_atoms;             // Number of distinct atom types in system
-  int n_inad;             // Number of atoms
-  int n_inert;             // Extra for N2 and H2O2
-  int n_species_inad;      // Number of species used in inadequacy model
-  int n_species_d;         // Number of species used in detailed model
-  int n_phis;              // Equivalence ratios to run
-  int n_heating;           // Different heating rates to run
-  int n_T;                 // Different starting temperatures to run
-  double timePoint;                 // Time-step size
-  int n_times;             // Number of time-steps to run
-  int n_times_d;           // Number of time-steps in detailed profile
-  int n_reactions;         // Number of reactions in mechanism
-  int n_reactions_inad;    // Number of reactions in inadequacy model
-  double fuel;                      // Stoichiometric factor for fuel (H2 here)
-  double oxidizer_i;                // Initial concentration of oxidizer
-  double nitrogen;                  // Concentration of nitrogen
-  int heat_rates_in;       // Flag for heating rate calibration
-  int init_temperature_in; // Flag for initial temperature calibration
-  double TO;                        // Initial temperature
-  double heating_rate;              // Heating rate
-  char *thermo_filename;            // Thermodynamics input file
-  char *reaction_filename;          // Reaction input file
-  char *data_filename;              // Filename to write data to
-  double time_ig;                   // Ignition time from detailed model
-  double Tig;                       // Ignition temperature from detailed model
-
-  // Open input parameters file
-  grvy_input_fopen("./input.txt");
-
-  // Read in parameters
-  grvy_input_fread_int("n_species", &n_species);
-  grvy_input_fread_int("n_atoms", &n_atoms);
-  grvy_input_fread_int("n_inad", &n_inad);
-  grvy_input_fread_int("n_inert", &n_inert);
-  grvy_input_fread_int("n_species_inad", &n_species_inad);
-  grvy_input_fread_int("n_species_d", &n_species_d);
-  grvy_input_fread_int("n_phis", &n_phis);
-  grvy_input_fread_int("n_heating", &n_heating);
-  grvy_input_fread_int("n_T", &n_T);
-  grvy_input_fread_int("heat_rates", &heat_rates_in);
-  grvy_input_fread_int("Temperatures", &init_temperature_in);
-  grvy_input_fread_double("TO", &TO);
-  grvy_input_fread_double("heating_rate", &heating_rate);
-  grvy_input_fread_double("time_points", &timePoint);
-  grvy_input_fread_int("num_times", &n_times);
-  grvy_input_fread_int("n_times_d", &n_times_d);
-  grvy_input_fread_int("num_reactions", &n_reactions);
-  grvy_input_fread_int("n_reactions_inad", &n_reactions_inad);
-  grvy_input_fread_double("fuel", &fuel);
-  grvy_input_fread_double("oxidizer_i", &oxidizer_i);
-  grvy_input_fread_double("nitrogen", &nitrogen);
-  grvy_input_fread_char("thermo", &thermo_filename);
-  grvy_input_fread_char("reactionset", &reaction_filename);
-  grvy_input_fread_double("time_ig", &time_ig);
-  grvy_input_fread_char("dataset", &data_filename);
-  grvy_input_fread_double("Tig", &Tig);
-
-  // Close input parameters file
-  grvy_input_fclose();
+//  int n_species;           // Number of species (not including extras for N2 and H2O2)
+//  int n_atoms;             // Number of distinct atom types in system
+//  int n_inad;             // Number of atoms
+//  int n_inert;             // Extra for N2 and H2O2
+//  int n_species_inad;      // Number of species used in inadequacy model
+//  int n_species_d;         // Number of species used in detailed model
+//  int n_phis;              // Equivalence ratios to run
+//  int n_heating;           // Different heating rates to run
+//  int n_T;                 // Different starting temperatures to run
+//  double timePoint;                 // Time-step size
+//  int n_times;             // Number of time-steps to run
+//  int n_times_d;           // Number of time-steps in detailed profile
+//  int n_reactions;         // Number of reactions in mechanism
+//  int n_reactions_inad;    // Number of reactions in inadequacy model
+//  double fuel;                      // Stoichiometric factor for fuel (H2 here)
+//  double oxidizer_i;                // Initial concentration of oxidizer
+//  double nitrogen;                  // Concentration of nitrogen
+//  int heat_rates_in;       // Flag for heating rate calibration
+//  int init_temperature_in; // Flag for initial temperature calibration
+//  double TO;                        // Initial temperature
+//  double heating_rate;              // Heating rate
+//  char *thermo_filename;            // Thermodynamics input file
+//  char *reaction_filename;          // Reaction input file
+//  char *data_filename;              // Filename to write data to
+//  double time_ig;                   // Ignition time from detailed model
+//  double Tig;                       // Ignition temperature from detailed model
+//
+//  printf("Start reading input.");
+//
+//  // Open input parameters file
+//  grvy_input_fopen("./input.txt");
+//
+//  // Read in parameters
+//  grvy_input_fread_int("n_species", &n_species);
+//  grvy_input_fread_int("n_atoms", &n_atoms);
+//  grvy_input_fread_int("n_inad", &n_inad);
+//  grvy_input_fread_int("n_inert", &n_inert);
+//  grvy_input_fread_int("n_species_inad", &n_species_inad);
+//  grvy_input_fread_int("n_species_d", &n_species_d);
+//  grvy_input_fread_int("n_phis", &n_phis);
+//  grvy_input_fread_int("n_heating", &n_heating);
+//  grvy_input_fread_int("n_T", &n_T);
+//  grvy_input_fread_int("heat_rates", &heat_rates_in);
+//  grvy_input_fread_int("Temperatures", &init_temperature_in);
+//  grvy_input_fread_double("TO", &TO);
+//  grvy_input_fread_double("heating_rate", &heating_rate);
+//  grvy_input_fread_double("time_points", &timePoint);
+//  grvy_input_fread_int("num_times", &n_times);
+//  grvy_input_fread_int("n_times_d", &n_times_d);
+//  grvy_input_fread_int("num_reactions", &n_reactions);
+//  grvy_input_fread_int("n_reactions_inad", &n_reactions_inad);
+//  grvy_input_fread_double("fuel", &fuel);
+//  grvy_input_fread_double("oxidizer_i", &oxidizer_i);
+//  grvy_input_fread_double("nitrogen", &nitrogen);
+//  grvy_input_fread_char("thermo", &thermo_filename);
+//  grvy_input_fread_char("reactionset", &reaction_filename);
+//  grvy_input_fread_double("time_ig", &time_ig);
+//  grvy_input_fread_char("dataset", &data_filename);
+//  grvy_input_fread_double("Tig", &Tig);
+//
+//  // Close input parameters file
+//  grvy_input_fclose();
+//
+//  printf("Finished reading input.");
 
   // Total number of species
   const unsigned int n_species_tot = n_species + n_inert + n_inad;
