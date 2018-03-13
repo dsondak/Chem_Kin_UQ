@@ -214,7 +214,17 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   // Read truth data
   const unsigned int n_eq_d = n_species_d + n_inert + 1;
   printf("n_times_d = %2.1i,     n_eq_d = %2.1i\n\n", n_times_d, n_eq_d);
-  truth_data detailed_profile("detailed_profile.h5", 1, 1, n_times_d, n_eq_d);
+
+  // Get the file name for the truth data
+  char file_name[23];
+  char proc_id[2];
+  int scen = 0;
+  strcpy(file_name, "detailed_profile_p");
+  sprintf(proc_id, "%d", env.fullRank());
+  strcat(file_name, proc_id);
+  strcat(file_name, ".h5");
+
+  truth_data detailed_profile(file_name, 1, 1, n_times_d, n_eq_d);
 
   // Set up data
   std::map<double, double> Tdata;
