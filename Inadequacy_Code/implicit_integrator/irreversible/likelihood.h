@@ -12,7 +12,6 @@ class Likelihood : public QUESO::BaseScalarFunction<V, M>
 public:
 
   Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo);
-  //Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo, std::ofstream& outstream);
 
   const QUESO::BaseEnvironment* m_env;
   reaction_info * m_rxnMain;

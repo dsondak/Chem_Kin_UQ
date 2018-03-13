@@ -140,7 +140,6 @@ double Likelihood<V, M>::lnValue(
   std::vector<double> sample_points(n_times, 0.0);
   int scen; // For counting which scenario we're on
 
-  //grvy_timer_init("TIMING LIKELIHOOD EVALS"); // Initialize GRVY timer
   for (int i = 0; i < n_phis; ++i)
   { // Loop over equivalence ratio
       for (int ii = 0; ii < n_scen; ++ii)
@@ -164,18 +163,10 @@ double Likelihood<V, M>::lnValue(
           {
               sample_points[n] = obs_data.sample_points[(i * n_scen + ii)* n_times + n];
           }
-          if (scen > 0)
-          {
-             //grvy_timer_reset(); // Reset timer
-          }
-          //grvy_timer_begin("Time forward model");
           try
           { // Run the forward model
               // Compute the solution
               kinetics_forward(initial_conditions,sample_points,rxn,returnValues);
-              //grvy_timer_end("Time forward model");
-              //grvy_timer_finalize();
-              //grvy_timer_summarize();
               // Compute the misfit
               for (int j = 0; j < n_times; j++)
               { // Loop over the sample times
@@ -195,9 +186,6 @@ double Likelihood<V, M>::lnValue(
           }
           catch(...)
           {
-              //grvy_timer_end("Time forward model");
-              //grvy_timer_finalize();
-              //grvy_timer_summarize();
               std::cout << "Faulty Parameters:\n\n";
               for (unsigned int j = 0; j < n_reactions_inad; j++)
               {

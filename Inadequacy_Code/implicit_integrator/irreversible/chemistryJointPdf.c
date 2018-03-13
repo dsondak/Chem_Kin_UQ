@@ -140,9 +140,9 @@ ChemistryJointPdf<V,M>::lnValue(const V& domainVector, const V* domainDirection,
   }
   printf("\n");
   std::cout << "\n joint prior = " << logpdf << "\n" << std::endl;
-  if (logpdf <= -1.0e+03) {
-     exit(0);
-  }
+  //if (logpdf <= -1.0e+03) {
+  //   exit(0);
+  //}
 
   // Now return the joing pdf
   return logpdf;

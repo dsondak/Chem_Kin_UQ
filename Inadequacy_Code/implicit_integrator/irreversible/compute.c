@@ -108,7 +108,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   }
 
   // Load file
-  YAML::Node input = YAML::LoadFile("filename.yaml");
+  YAML::Node input = YAML::LoadFile("input.yaml");
 
   // read data
   int n_species = input["n_species"].as<int>();
@@ -164,74 +164,6 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   printf("reaction_filename = %s\n", reaction_filename.c_str());
   std::string data_filename = input["data_filename"].as<std::string>();
   printf("data_filename = %s\n", data_filename.c_str());
-  //std::vector<double> distdata = input["distortion_coefficients"]["data"].as<std::vector<double>>();
-
-
-  // Input parameters
-//  int n_species;           // Number of species (not including extras for N2 and H2O2)
-//  int n_atoms;             // Number of distinct atom types in system
-//  int n_inad;             // Number of atoms
-//  int n_inert;             // Extra for N2 and H2O2
-//  int n_species_inad;      // Number of species used in inadequacy model
-//  int n_species_d;         // Number of species used in detailed model
-//  int n_phis;              // Equivalence ratios to run
-//  int n_heating;           // Different heating rates to run
-//  int n_T;                 // Different starting temperatures to run
-//  double timePoint;                 // Time-step size
-//  int n_times;             // Number of time-steps to run
-//  int n_times_d;           // Number of time-steps in detailed profile
-//  int n_reactions;         // Number of reactions in mechanism
-//  int n_reactions_inad;    // Number of reactions in inadequacy model
-//  double fuel;                      // Stoichiometric factor for fuel (H2 here)
-//  double oxidizer_i;                // Initial concentration of oxidizer
-//  double nitrogen;                  // Concentration of nitrogen
-//  int heat_rates_in;       // Flag for heating rate calibration
-//  int init_temperature_in; // Flag for initial temperature calibration
-//  double TO;                        // Initial temperature
-//  double heating_rate;              // Heating rate
-//  char *thermo_filename;            // Thermodynamics input file
-//  char *reaction_filename;          // Reaction input file
-//  char *data_filename;              // Filename to write data to
-//  double time_ig;                   // Ignition time from detailed model
-//  double Tig;                       // Ignition temperature from detailed model
-//
-//  printf("Start reading input.");
-//
-//  // Open input parameters file
-//  grvy_input_fopen("./input.txt");
-//
-//  // Read in parameters
-//  grvy_input_fread_int("n_species", &n_species);
-//  grvy_input_fread_int("n_atoms", &n_atoms);
-//  grvy_input_fread_int("n_inad", &n_inad);
-//  grvy_input_fread_int("n_inert", &n_inert);
-//  grvy_input_fread_int("n_species_inad", &n_species_inad);
-//  grvy_input_fread_int("n_species_d", &n_species_d);
-//  grvy_input_fread_int("n_phis", &n_phis);
-//  grvy_input_fread_int("n_heating", &n_heating);
-//  grvy_input_fread_int("n_T", &n_T);
-//  grvy_input_fread_int("heat_rates", &heat_rates_in);
-//  grvy_input_fread_int("Temperatures", &init_temperature_in);
-//  grvy_input_fread_double("TO", &TO);
-//  grvy_input_fread_double("heating_rate", &heating_rate);
-//  grvy_input_fread_double("time_points", &timePoint);
-//  grvy_input_fread_int("num_times", &n_times);
-//  grvy_input_fread_int("n_times_d", &n_times_d);
-//  grvy_input_fread_int("num_reactions", &n_reactions);
-//  grvy_input_fread_int("n_reactions_inad", &n_reactions_inad);
-//  grvy_input_fread_double("fuel", &fuel);
-//  grvy_input_fread_double("oxidizer_i", &oxidizer_i);
-//  grvy_input_fread_double("nitrogen", &nitrogen);
-//  grvy_input_fread_char("thermo", &thermo_filename);
-//  grvy_input_fread_char("reactionset", &reaction_filename);
-//  grvy_input_fread_double("time_ig", &time_ig);
-//  grvy_input_fread_char("dataset", &data_filename);
-//  grvy_input_fread_double("Tig", &Tig);
-//
-//  // Close input parameters file
-//  grvy_input_fclose();
-//
-//  printf("Finished reading input.");
 
   // Total number of species
   const unsigned int n_species_tot = n_species + n_inert + n_inad;

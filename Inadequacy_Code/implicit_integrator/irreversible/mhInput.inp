@@ -1,7 +1,7 @@
 ###############################################
 # UQ Environment
 ###############################################
-env_numSubEnvironments   = 1
+env_numSubEnvironments   = 2
 env_subDisplayFileName   = outputData/display_env
 env_subDisplayAllowAll   = 1
 env_displayVerbosity     = 0
@@ -38,10 +38,10 @@ ip_optimizer_lineTolerance = 1.0e-01
 # Information for Metropolis-Hastings algorithm
 ###############################################
 ip_mh_dataOutputFileName   = outputData/sip
-#ip_mh_dataOutputFileType   = txt
+ip_mh_dataOutputFileType   = txt
 
 ip_mh_rawChain_dataInputFileName    = . 
-ip_mh_rawChain_size                 = 1001
+ip_mh_rawChain_size                 = 101
 ip_mh_rawChain_generateExtra        = 0
 ip_mh_rawChain_displayPeriod        = 10
 ip_mh_rawChain_measureRunTimes      = 1
@@ -56,7 +56,7 @@ ip_mh_am_adaptInterval              = 100
 ip_mh_am_eta                        = 0.064  	#(2.4^2)/d, d is the dimension of the problem
 ip_mh_am_epsilon                    = 1.0e-5
 
-ip_mh_doLogitTransform              = 0
+ip_mh_doLogitTransform              = 1
 
 ip_mh_filteredChain_generate             = 1
 ip_mh_filteredChain_discardedPortion     = 0.
