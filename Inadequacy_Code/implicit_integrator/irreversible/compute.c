@@ -107,8 +107,11 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
               << std::endl;
   }
 
+  int my_rank = env.fullRank(); 
+
   // Load file
-  YAML::Node input = YAML::LoadFile("input.yaml");
+  std::string input_file = "input_p" + std::to_string(env.fullRank());
+  YAML::Node input = YAML::LoadFile(input_file);
 
   // read data
   int n_species = input["n_species"].as<int>();
@@ -233,7 +236,6 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
       double T     = detailed_profile.observation_data[n* n_eq_d + n_eq_d - 1];
       Tdata[time] = T;
   }
-
 
   /*===================================
   ***
