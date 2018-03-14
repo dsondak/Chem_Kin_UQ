@@ -218,20 +218,29 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   const unsigned int n_eq_d = n_species_d + n_inert + 1;
   printf("n_times_d = %2.1i,     n_eq_d = %2.1i\n\n", n_times_d, n_eq_d);
 
-  // Get the file name for the truth data
+  // Get the file name for the exact solution
   char file_name[23];
   char proc_id[2];
-  int scen = 0;
   strcpy(file_name, "detailed_profile_p");
-  sprintf(proc_id, "%d", env.fullRank());
+  sprintf(proc_id, "%d", my_rank);
   strcat(file_name, proc_id);
   strcat(file_name, ".h5");
+
+  // Get file name for observation data
+  char data_fname[17];
+  strcpy(data_fname, "truth_data_p");
+  sprintf(proc_id, "%d", my_rank);
+  strcat(data_fname, proc_id);
+  strcat(data_fname, ".h5");
+
+  printf("%s\n", data_fname);
+  exit(0);
 
   truth_data detailed_profile(file_name, 1, 1, n_times_d, n_eq_d);
 
   // Set up data
   std::map<double, double> Tdata;
-  for (unsigned int n = 0; n < n_times_d; n++) {
+  for (int n = 0; n < n_times_d; n++) {
       double time  = detailed_profile.sample_points[n];
       double T     = detailed_profile.observation_data[n* n_eq_d + n_eq_d - 1];
       Tdata[time] = T;
@@ -402,14 +411,14 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   QUESO::GslVector paramMaxValues(paramSpace.zeroVector());
 
   // Domain for all parameters and their hypermeans
-  for (int i = 0; i < 2 * n_params; i++)
+  for (unsigned int i = 0; i < 2 * n_params; i++)
   {
       paramMinValues[i] = -INFINITY;
       paramMaxValues[i] =  INFINITY;
   }
 
   // Domain for hypervariances
-  for (int i = 0; i < n_params; i++)
+  for (unsigned int i = 0; i < n_params; i++)
   {
       paramMinValues[2 * n_params + i] = 0.0;
       paramMaxValues[2 * n_params + i] = INFINITY;
@@ -426,7 +435,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   ========================================================*/
   
   
-  Likelihood<QUESO::GslVector, QUESO::GslMatrix> lhood(env, paramDomain, &rxnMain);
+  Likelihood<QUESO::GslVector, QUESO::GslMatrix> lhood(env, paramDomain, data_fname, &rxnMain);
 
   /*======================================================
   ***
@@ -471,19 +480,19 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
                      log(3.7484557650026878), 1.0e-16, 4.3359623996979244};
 
   // First set up the Arrhenius inadequacy parameters
-  for (int i = 0; i < n_params; i++)
+  for (unsigned int i = 0; i < n_params; i++)
   {
       paramInitials[i] = init_kinetics[i];
   }
 
   // Now set up hypermeans of the Arrhenius inadequacy parameters
-  for (int i = 0; i < n_params; i++)
+  for (unsigned int i = 0; i < n_params; i++)
   {
       paramInitials[n_params + i] = init_kinetics[i];
   }
 
   // Finally do the hypervariances
-  for (int i = 0; i < n_params; i++)
+  for (unsigned int i = 0; i < n_params; i++)
   {
       paramInitials[2 * n_params + i] = 10.0;
   }
@@ -493,7 +502,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   QUESO::GslMatrix proposalCovMatrix(diagVec);
 
   double var = 1.0e-02;
-  for (int i = 0; i < n_params_total; i++)
+  for (unsigned int i = 0; i < n_params_total; i++)
   {
       if (paramInitials[i] == 1.0e-16)
       {

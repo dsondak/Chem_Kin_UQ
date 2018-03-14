@@ -11,7 +11,8 @@ class Likelihood : public QUESO::BaseScalarFunction<V, M>
 {
 public:
 
-  Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo);
+  Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, const char* fname, reaction_info * rxnInfo);
+  //Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo);
 
   const QUESO::BaseEnvironment* m_env;
   reaction_info * m_rxnMain;
@@ -21,6 +22,7 @@ public:
   int num_fields;
   int n_species;
   //std::ofstream write_file;
+  const char* fname;
   truth_data obs_data;
 
   virtual double lnValue(

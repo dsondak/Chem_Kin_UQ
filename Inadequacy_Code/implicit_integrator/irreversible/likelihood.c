@@ -42,10 +42,6 @@
 #include <antioch/nasa_mixture.h>
 #include <antioch/nasa_mixture_parsing.h>
 #include <antioch/nasa_curve_fit_base.h>
-// grvy
-//#include<grvy.h>
-//#include<sys/time.h>
-//#include<time.h>
 // Eigen functions
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
@@ -54,7 +50,8 @@
 using Eigen::EigenSolver;
 
 template<class V, class M>
-Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo)
+Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, const char* fname, reaction_info * rxnInfo)
+//Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo)
   : 
     QUESO::BaseScalarFunction<V, M>("", domainSet), 
     m_env(&env),                                                                   // QUESO Environment
@@ -64,7 +61,8 @@ Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::Vec
     n_scen(rxnInfo->ProblemInfo.n_scenario),                                       // Number of scenarios (not including phi)
     num_fields(rxnInfo->ProblemInfo.n_species_d + rxnInfo->ProblemInfo.n_inert + 1), // Number of fields (species + temperature NOT including catchalls)
     n_species(rxnInfo->ProblemInfo.n_species),                                     // Number of species (including catchalls)
-    obs_data("truth_data.h5", n_phis, n_scen, n_times, num_fields)                 // Observation data class
+    //obs_data("truth_data.h5", n_phis, n_scen, n_times, num_fields)                 // Observation data class
+    obs_data(fname, n_phis, n_scen, n_times, num_fields)                 // Observation data class
 {
   // Constructor
 }
