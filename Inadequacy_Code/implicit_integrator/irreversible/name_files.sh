@@ -2,7 +2,7 @@
 
 if [ $2 -eq 0 ]
 then
-    i=1
+    i=0
     while [ $i -lt $1 ]
     do
       cp nasa7_thermo_inad.xml nasa7_thermo_inad_p$i.xml
