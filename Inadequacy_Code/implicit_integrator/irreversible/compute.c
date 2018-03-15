@@ -110,7 +110,8 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   int my_rank = env.fullRank(); 
 
   // Load file
-  std::string input_file = "input_p" + std::to_string(env.fullRank());
+  std::string input_file = "input_p" + std::to_string(my_rank) + ".yaml";
+  //std::cout << "input file name is:  " << input_file << std::endl << std::endl;
   YAML::Node input = YAML::LoadFile(input_file);
 
   // read data
@@ -234,7 +235,6 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   strcat(data_fname, ".h5");
 
   printf("%s\n", data_fname);
-  exit(0);
 
   truth_data detailed_profile(file_name, 1, 1, n_times_d, n_eq_d);
 
@@ -464,7 +464,6 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
   ========================================================*/
 
   // Set up initial parameter values
-
   QUESO::GslVector paramInitials(paramSpace.zeroVector());
 
   std::vector<double> 
@@ -512,17 +511,7 @@ void computeAllParams(const QUESO::FullEnvironment& env) {
       {
          proposalCovMatrix(i,i) = var * paramInitials[i] * paramInitials[i];
       }
-      //if (paramInitials[i] != 0.0)
-      //{
-      //   proposalCovMatrix(i,i) = var * paramInitials[i] * paramInitials[i];
-      //}
-      //else
-      //{
-      //   proposalCovMatrix(i,i) = var;
-      //}
-      //printf("C(%2.1i, %2.1i) = %25.16e     theta = %25.16e\n", i, i, proposalCovMatrix(i,i), paramInitials[i]);
   }
-  //exit(0);
 
   // Solve!
   ip.solveWithBayesMetropolisHastings(NULL, paramInitials, &proposalCovMatrix);
