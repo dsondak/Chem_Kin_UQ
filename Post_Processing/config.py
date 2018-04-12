@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cycler import cycler
 # SET UP PLOT PARAMETERS FOR ALL PLOTS
 pars = {  'backend'             : 'pdf',
           'text.usetex'         : True,
-          'xtick.labelsize'     : 24,
+          'text.fontsize'       : 16,
+          'xtick.labelsize'     : 16,
           'xtick.major.pad'     : 10,
           'xtick.major.size'    : 10,
           'xtick.minor.size'    : 5,
           'xtick.major.width'   : 2.5,
           'xtick.minor.width'   : 1.25,
-          'ytick.labelsize'     : 24,
+          'ytick.labelsize'     : 16,
           'ytick.major.pad'     : 8,
           'ytick.major.size'    : 10,
           'ytick.minor.size'    : 5,
@@ -20,26 +20,26 @@ pars = {  'backend'             : 'pdf',
           'legend.borderpad'    : 0.25,     # empty space around the legend box
           'legend.labelspacing' : 0.5,
           'legend.borderaxespad': 0.75,
-          'legend.fontsize'     : 19,
+          'legend.fontsize'     : 16,
           'legend.fancybox'     : True,
           'legend.shadow'       : False,
-          'legend.frameon'      : False,
+          'legend.frameon'      : True,
           'lines.markersize'    : 7,
           'lines.linewidth'     : 3,
           'font.family'         : 'serif',
           'font.sans-serif'     : 'Helvetica',
           'font.serif'          : 'cmr10',
-          'font.size'           : 24,
+          'font.size'           : 16,
           'axes.facecolor'      : 'white',   # axes background color
           'axes.edgecolor'      : 'black',   # axes edge color
           'axes.linewidth'      : 1.0,     # edge linewidth
           'axes.labelweight'    : 'normal',  # weight of the x and y labels
           'axes.labelcolor'     : 'black',
-          'axes.labelsize'      : 24,
+          'axes.labelsize'      : 16,
           'axes.axisbelow'      : 'True',
           'axes.formatter.limits': (-4, 4), 
-          'axes.prop_cycle'     : cycler('color', ['#293352', '#A51C30', '#4E84C4', '#52854C', 
-                                   '#D16103', '#C4961A', '#FFDB6D'])
+          'axes.color_cycle'    : ['#293352', '#A51C30', '#4E84C4', '#52854C', 
+                                   '#D16103', '#C4961A', '#FFDB6D']
           }
 ################################################################################
 # COLORS
@@ -90,3 +90,15 @@ pentagon = 'p'
 star = '*'
 clubs = r'$\clubsuit$'
 bowtie = r'$\bowtie$'
+
+
+
+
+
+
+
+
+
+
+
+
