@@ -5,7 +5,11 @@ import matplotlib.pyplot as plt
 import h5py
 import config
 
+np.set_printoptions(precision=16)
+
 plt.rcParams.update(config.pars)
+
+add_noise = True
 
 # Read in solutions
 fsol_detailed = "detailed_solution.h5"
@@ -18,23 +22,29 @@ data_d = sol_detailed['Scenario1/truth']
 
 # Now get some samples from the truth data
 t = np.array(time_d)
-t_samps = np.array([0.0209, 0.021001, 0.02105, 0.021091, 0.0211, 0.021102, 0.021105, 0.021106, 
-                    0.021107,  0.021108, 0.021109, 0.02111, 0.02113, 0.0212, 0.0214])
-idxs = np.isin(t, t_samps)
+#t_samps = np.array([0.0209, 0.021001, 0.02105, 0.021091, 0.0211, 0.021102, 0.021105, 0.021106, 
+#                    0.021107,  0.021108, 0.021109, 0.02111, 0.02113, 0.0212, 0.0214])
+#t_samps = t_samps - 0.018653
+t_samps = np.array([0.002247, 0.002348, 0.002397, 0.002438, 0.002447, 0.002449, 0.002451, 0.002453, 0.002454, 0.002455, 0.002456, 0.002457, 0.002477, 0.002547, 0.002747])
+idxs = np.isin(np.around(t, decimals=6), t_samps)
 idxs = np.where(idxs)
 idxs = idxs[0]
 
 obs_data = np.zeros([np.size(t_samps), 10])
-#for ii in range(10):
-#    obs_data[:,ii] = data_d[idxs,ii]
-for ii in range(10):
-    for jj in range(np.size(t_samps)):
-        mean_data = data_d[idxs[jj],ii]
-        pert = np.sqrt(0.0025 * mean_data * mean_data) * np.random.randn()
-        obs_data[jj,ii] = mean_data + pert
+if (add_noise):
+   for ii in range(10):
+       for jj in range(np.size(t_samps)):
+           mean_data = data_d[idxs[jj],ii]
+           pert = np.sqrt(0.0025 * mean_data * mean_data) * np.random.randn()
+           obs_data[jj,ii] = mean_data + pert
+else:
+    for ii in range(10):
+        obs_data[:,ii] = data_d[idxs,ii]
 
 ig_data = sol_detailed['Scenario1/ignition']
-#print(ig_data[0], ig_data[1])
+print(ig_data[0], ig_data[1])
+
+exit()
 
 # Create truth_data.h5
 td = h5py.File('truth_test.h5', 'w')
