@@ -51,7 +51,6 @@ using Eigen::EigenSolver;
 
 template<class V, class M>
 Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, const char* fname, reaction_info * rxnInfo)
-//Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::VectorSet<V, M> & domainSet, reaction_info * rxnInfo)
   : 
     QUESO::BaseScalarFunction<V, M>("", domainSet), 
     m_env(&env),                                                                   // QUESO Environment
@@ -61,7 +60,6 @@ Likelihood<V, M>::Likelihood(const QUESO::BaseEnvironment& env, const QUESO::Vec
     n_scen(rxnInfo->ProblemInfo.n_scenario),                                       // Number of scenarios (not including phi)
     num_fields(rxnInfo->ProblemInfo.n_species_d + rxnInfo->ProblemInfo.n_inert + 1), // Number of fields (species + temperature NOT including catchalls)
     n_species(rxnInfo->ProblemInfo.n_species),                                     // Number of species (including catchalls)
-    //obs_data("truth_data.h5", n_phis, n_scen, n_times, num_fields)                 // Observation data class
     obs_data(fname, n_phis, n_scen, n_times, num_fields)                 // Observation data class
 {
   // Constructor
@@ -98,13 +96,13 @@ double Likelihood<V, M>::lnValue(
   //std::ofstream param_file = write_file;
 
   // Set up problem parameters
-  const unsigned int n_inad  = rxn->InadInfo.n_inad;               // Number of atoms in the model
   const unsigned int n_data  = rxn->ProblemInfo.n_species;         // Active species (not including inert species)
   const unsigned int n_eq    = rxn->ProblemInfo.n_eq;              // Total number of fields (catchalls, species, temperature)
-  const unsigned int n_inert = rxn->ProblemInfo.n_inert;           // Number of inert species (e.g. N2)
   double varY   = 5.0e-03;
-  double varT   = 2.0e+03;
-  double var_ig = 10.0;
+  //double var_ig = 10.0;
+  double var_ig = 1.0e-06;
+
+  int my_rank = m_env->fullRank();
 
   // Set up initial conditions
   std::vector<double> initial_conditions(n_eq, 0.0);
@@ -119,7 +117,7 @@ double Likelihood<V, M>::lnValue(
   std::vector<double> newValues(3, 0.0);
   unsigned int n_reactions = rxn->ProblemInfo.n_reactions;
   unsigned int n_reactions_inad = rxn->InadInfo.n_reactions_inad;
-  printf("Parameter Values:\n");
+  printf("Parameter Values for Rank %2.1i:\n", my_rank);
   for (int j = 0; j < n_reactions_inad; j++)
   {
       // Prefactor on j is 3 b/c of 3 Arrhenius params
@@ -171,20 +169,25 @@ double Likelihood<V, M>::lnValue(
                   for (int k = 0; k < n_data; k++)
                   { // Loop over the species
                       // Calculate (d - model) where d is the data
-                      diff = returnValues[n_eq * j + k] - 
-                               obs_data.observation_data[n_times*num_fields*i + num_fields*j +k];
+                      double obs = obs_data.observation_data[n_times*num_fields*i + num_fields*j +k];
+                      diff = returnValues[n_eq * j + k] - obs;
+                      //diff = returnValues[n_eq * j + k] - 
+                      //         obs_data.observation_data[n_times*num_fields*i + num_fields*j +k];
                       // Calculate (d - model)^T * \Sigma^{-1} * (d-model)
                       // Assume that \Sigma is a diagonal matrix where each entry is identical and equal to variance
+                      varY = 0.0025 * obs * obs;
                       misfitValue += diff * diff / varY;
                   }
               }
               // Ignition temperature misfit
-              diff = returnValues[n_times * n_eq] - rxn->ProblemInfo.Tig;
+              //diff = returnValues[n_times * n_eq] - rxn->ProblemInfo.Tig;
+              diff = returnValues[n_times * n_eq]; // Error in ignition time
               misfitValue += diff * diff / var_ig;
           }
           catch(...)
           {
-              std::cout << "Faulty Parameters:\n\n";
+              //std::cout << "Faulty Parameters for Rank %2.1i:\n\n";
+              printf("Faulty Parameters for Rank %2.1i:\n\n", my_rank);
               for (unsigned int j = 0; j < n_reactions_inad; j++)
               {
                   // Prefactor on j is 3 b/c of 3 Arrhenius params

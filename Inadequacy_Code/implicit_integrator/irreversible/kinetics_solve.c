@@ -70,7 +70,7 @@
 #define T0    RCONST(0.0)      /* initial time           */
 #define T1    RCONST(0.000001) /* first output time      */
 #define DTOUT RCONST(0.000001) /* output time factor     */
-#define NOUT  15000            /* number of output times */
+#define NOUT  5000             /* number of output times */
 
 
 /* Functions Called by the Solver */
@@ -163,7 +163,7 @@ int kinetics_forward(std::vector<double>& initial_condition,
   flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
   if (check_flag(&flag, "CVodeSVtolerances", 1)) return(1);
 
-  flag = CVodeSetMaxNumSteps(cvode_mem, 10000000);
+  flag = CVodeSetMaxNumSteps(cvode_mem, 500000);
   if (check_flag(&flag, "CVodeSetMaxNumSteps", 1)) return(1);
 
   /* Create dense SUNMatrix for use in linear solves */
@@ -202,9 +202,9 @@ int kinetics_forward(std::vector<double>& initial_condition,
     if (check_flag(&flag, "CVode", 1)) throw flag;
 
     //if (Ith(y,n_eq) >= 1500.0) {
-    if (Ith(y,1) <= 0.99*initial_condition[0]) {
+    if (Ith(y,1) <= 0.98*initial_condition[0]) {
        time_ig = t;
-       Tig = Ith(y,n_eq);
+       //Tig = Ith(y,n_eq);
        break;
     }
 
@@ -246,7 +246,7 @@ int kinetics_forward(std::vector<double>& initial_condition,
   }
 
   /* Ignition data */
-  solution[n_eq * n_samp] = Tig;
+  solution[n_eq * n_samp] = delta_tig;
 
   /* Free y and abstol vectors */
   N_VDestroy_Serial(y);
