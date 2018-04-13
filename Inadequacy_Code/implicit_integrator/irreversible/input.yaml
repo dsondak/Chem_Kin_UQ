@@ -9,11 +9,11 @@ n_T: 1
 n_heating: 1
 Temperatures: 0
 heat_rates: 1
-TO: 800.0
+TO: 450.0
 heating_rate: 5.0e+006
 time_points: 1.0e-006
-num_times: 14
-n_times_d: 15000
+num_times: 15
+n_times_d: 50000
 num_reactions: 5
 n_reactions_inad: 10
 fuel: 2.0
@@ -22,5 +22,5 @@ nitrogen: 3.78
 thermo_filename: nasa7_thermo_inad.xml
 reaction_filename: inad_rxn.xml
 data_filename: truth_data.h5
-time_ig: 0.019462
-Tig: 919.837099088
+time_ig:  0.02108
+Tig: 986.6421234820912

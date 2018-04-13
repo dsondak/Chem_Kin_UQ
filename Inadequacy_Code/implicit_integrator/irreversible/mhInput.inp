@@ -1,9 +1,10 @@
 ###############################################
 # UQ Environment
 ###############################################
-env_numSubEnvironments   = 2
+env_numSubEnvironments   = 16
 env_subDisplayFileName   = outputData/display_env
 env_subDisplayAllowAll   = 1
+env_subDisplayAllowedSet = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 env_displayVerbosity     = 0
 env_seed                 = -1
 
@@ -41,7 +42,7 @@ ip_mh_dataOutputFileName   = outputData/sip
 ip_mh_dataOutputFileType   = txt
 
 ip_mh_rawChain_dataInputFileName    = . 
-ip_mh_rawChain_size                 = 101
+ip_mh_rawChain_size                 = 5001
 ip_mh_rawChain_generateExtra        = 0
 ip_mh_rawChain_displayPeriod        = 10
 ip_mh_rawChain_measureRunTimes      = 1
@@ -62,6 +63,7 @@ ip_mh_filteredChain_generate             = 1
 ip_mh_filteredChain_discardedPortion     = 0.
 ip_mh_filteredChain_lag                  = 20
 ip_mh_filteredChain_dataOutputFileName   = outputData/sip_filtered_chain
+ip_mh_rawChain_dataOutputAllowedSet = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 
 ###############################################
 # Statistical forward problem (fp)

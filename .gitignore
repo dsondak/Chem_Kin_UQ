@@ -20,6 +20,13 @@
 # *.eps
  *.pdf
 
+## Several misc file types from code
+*.xml
+*.h5
+*.yaml
+*.err
+*.out
+
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
 *.bbl
 *.bcf

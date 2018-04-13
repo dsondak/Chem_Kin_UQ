@@ -89,12 +89,12 @@
 
 
 /* Problem Constants */
-#define RTOL  RCONST(1.0e-08)  /* scalar relative tolerance            */
-#define ATOL  RCONST(1.0e-13)  /* scalar relative tolerance            */
+#define RTOL  RCONST(1.0e-06)  /* scalar relative tolerance            */
+#define ATOL  RCONST(1.0e-11)  /* scalar relative tolerance            */
 #define T0    RCONST(0.0)      /* initial time           */
 #define T1    RCONST(0.000001) /* first output time      */
 #define DTOUT RCONST(0.000001) /* output time factor     */
-#define NOUT  50000            /* number of output times */
+#define NOUT  5000            /* number of output times */
 
 
 /* Functions Called by the Solver */
@@ -155,30 +155,30 @@ int main()
    *
    ******************************/
   // Input and output filenames
-  std::string thermo_fname("nasa7_thermo_reduced.xml"); // thermo data file
-  std::string reaction_set_fname("five_rxn.xml");    // reaction set file
+  //std::string thermo_fname("nasa7_thermo_reduced.xml"); // thermo data file
+  //std::string reaction_set_fname("five_rxn.xml");    // reaction set file
 
-  //std::string thermo_fname("nasa7_thermo_detailed.xml"); // thermo data file
-  //std::string reaction_set_fname("detailed_rxn.xml");    // reaction set file
+  std::string thermo_fname("nasa7_thermo_detailed.xml"); // thermo data file
+  std::string reaction_set_fname("detailed_rxn.xml");    // reaction set file
 
   // Ugly C syntax b/c using C HDF5 interface
-  //char data_fname[21];
-  //strcpy(data_fname, "detailed_solution.h5");  // file to write solution to
-  char data_fname[20];
-  strcpy(data_fname, "reduced_solution.h5");  // file to write solution to
+  char data_fname[21];
+  strcpy(data_fname, "detailed_solution.h5");  // file to write solution to
+  //char data_fname[20];
+  //strcpy(data_fname, "reduced_solution.h5");  // file to write solution to
 
-  const unsigned int n_species        = 7;  // number of species
+  const unsigned int n_species        = 8;  // number of species (7 for reduced, 8 for detailed)
   const unsigned int n_inert          = 1;  // e.g. N2
   const unsigned int n_inad           = 0;  // virtual species
   const unsigned int n_atoms          = 2;  // types of atoms in the system
-  const unsigned int n_reactions      = 5; // number of reactions
+  const unsigned int n_reactions      = 21; // number of reactions (5 for reduced, 21 for detailed)
   const unsigned int n_species_tot    = n_species + n_inert + n_inad;
   double             Q                = 5.0e+06; // heating rate
 
   double init_H2 = 2.0;   // Initial moles of H2
   double init_O2 = 1.0;   // Initial moles of O2
   double init_N2 = 3.78;  // Initial moles of N2
-  double init_T  = 450.0; // Initial temperature (in K)
+  double init_T  = 900.0; // Initial temperature (in K)
 
   const unsigned int n_eq = n_species_tot + 1; // + 1 for temperature
 
@@ -192,7 +192,7 @@ int main()
   species_str_list.push_back("OH");
   species_str_list.push_back("HO2");
   species_str_list.push_back("H2O");
-  //species_str_list.push_back("H2O2"); // remove this for the reduced model
+  species_str_list.push_back("H2O2"); // remove this for the reduced model
   species_str_list.push_back("N2");
 
   // Number of atoms of each type in the system
@@ -204,37 +204,6 @@ int main()
   // Species to atoms transition matrix
   std::vector<double> Amat((n_atoms + 1) * n_species_tot, 0.0);
   // For detailed model
-  //Amat[0] = 2.0;
-  //Amat[1] = 0.0;
-  //Amat[2] = 1.0;
-  //Amat[3] = 0.0;
-  //Amat[4] = 1.0;
-  //Amat[5] = 1.0;
-  //Amat[6] = 2.0;
-  //Amat[7] = 2.0;
-  //Amat[8] = 0.0;
-
-  //Amat[9]  = 0.0;
-  //Amat[10] = 2.0;
-  //Amat[11] = 0.0;
-  //Amat[12] = 1.0;
-  //Amat[13] = 1.0;
-  //Amat[14] = 2.0;
-  //Amat[15] = 1.0;
-  //Amat[16] = 2.0;
-  //Amat[17] = 0.0;
-
-  //Amat[18] = 0.0;
-  //Amat[19] = 0.0;
-  //Amat[20] = 0.0;
-  //Amat[21] = 0.0;
-  //Amat[22] = 0.0;
-  //Amat[23] = 0.0;
-  //Amat[24] = 0.0;
-  //Amat[25] = 0.0;
-  //Amat[26] = 2.0;
-
-  // For reduced model
   Amat[0] = 2.0;
   Amat[1] = 0.0;
   Amat[2] = 1.0;
@@ -242,25 +211,56 @@ int main()
   Amat[4] = 1.0;
   Amat[5] = 1.0;
   Amat[6] = 2.0;
-  Amat[7] = 0.0;
-
+  Amat[7] = 2.0;
   Amat[8] = 0.0;
-  Amat[9] = 2.0;
-  Amat[10] = 0.0;
-  Amat[11] = 1.0;
-  Amat[12] = 1.0;
-  Amat[13] = 2.0;
-  Amat[14] = 1.0;
-  Amat[15] = 0.0;
 
-  Amat[16] = 0.0;
+  Amat[9]  = 0.0;
+  Amat[10] = 2.0;
+  Amat[11] = 0.0;
+  Amat[12] = 1.0;
+  Amat[13] = 1.0;
+  Amat[14] = 2.0;
+  Amat[15] = 1.0;
+  Amat[16] = 2.0;
   Amat[17] = 0.0;
+
   Amat[18] = 0.0;
   Amat[19] = 0.0;
   Amat[20] = 0.0;
   Amat[21] = 0.0;
   Amat[22] = 0.0;
-  Amat[23] = 2.0;
+  Amat[23] = 0.0;
+  Amat[24] = 0.0;
+  Amat[25] = 0.0;
+  Amat[26] = 2.0;
+
+  // For reduced model
+  //Amat[0] = 2.0;
+  //Amat[1] = 0.0;
+  //Amat[2] = 1.0;
+  //Amat[3] = 0.0;
+  //Amat[4] = 1.0;
+  //Amat[5] = 1.0;
+  //Amat[6] = 2.0;
+  //Amat[7] = 0.0;
+
+  //Amat[8] = 0.0;
+  //Amat[9] = 2.0;
+  //Amat[10] = 0.0;
+  //Amat[11] = 1.0;
+  //Amat[12] = 1.0;
+  //Amat[13] = 2.0;
+  //Amat[14] = 1.0;
+  //Amat[15] = 0.0;
+
+  //Amat[16] = 0.0;
+  //Amat[17] = 0.0;
+  //Amat[18] = 0.0;
+  //Amat[19] = 0.0;
+  //Amat[20] = 0.0;
+  //Amat[21] = 0.0;
+  //Amat[22] = 0.0;
+  //Amat[23] = 2.0;
 
   // Create output file
   bool write_to_h5 = true;
@@ -407,11 +407,12 @@ int main()
     if (check_flag(&flag, "CVode", 1)) break;
 
     if (no_ig) {
-       if (Ith(y,n_eq) >= 1500.0) {
+       //if (Ith(y,n_eq) >= 1500.0) {
+       if (Ith(y,1) <= 0.98 * init_H2) {
           time_ig = t;
           T_ig = Ith(y,n_eq);
           no_ig = false;
-          //rxnMain.ProblemInfo.Q = 0.0;
+          rxnMain.ProblemInfo.Q = 0.0;
        }
     }
 

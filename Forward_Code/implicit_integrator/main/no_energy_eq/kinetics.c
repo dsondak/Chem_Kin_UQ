@@ -161,19 +161,22 @@ int main()
    *
    ******************************/
   bool detailed = false;
-  bool reduced = true;
-  bool inad = false;
+  bool reduced = false;
+  bool inad = true;
 
   // Input and output filenames
-  std::string thermo_fname("nasa7_thermo_reduced.xml"); // thermo data file
+  //std::string thermo_fname("nasa7_thermo_reduced.xml"); // thermo data file
   //std::string thermo_fname("nasa7_thermo_inad.xml"); // thermo data file
-  std::string reaction_set_fname("five_rxn.xml");    // reaction set file
+  std::string thermo_fname("nasa7_thermo_inad_p13.xml"); // thermo data file
+  //std::string reaction_set_fname("five_rxn.xml");    // reaction set file
   //std::string reaction_set_fname("inad_rxn.xml");    // reaction set file
+  std::string reaction_set_fname("inad_rxn_p13.xml");    // reaction set file
 
   // Ugly C syntax b/c using C HDF5 interface
-  char data_fname[20];
-  strcpy(data_fname, "reduced_solution.h5");  // file to write solution to
-  //strcpy(data_fname, "inad_solution.h5");  // file to write solution to
+  //char data_fname[20];
+  //strcpy(data_fname, "reduced_solution.h5");  // file to write solution to
+  char data_fname[17];
+  strcpy(data_fname, "inad_solution.h5");  // file to write solution to
 
   unsigned int n_species              = 7; // number of species
   unsigned int n_species_d            = 8; // number of species in the detailed model
