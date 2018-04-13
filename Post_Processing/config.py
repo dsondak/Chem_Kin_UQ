@@ -4,14 +4,14 @@
 # SET UP PLOT PARAMETERS FOR ALL PLOTS
 pars = {  'backend'             : 'pdf',
           'text.usetex'         : True,
-          'text.fontsize'       : 32,
-          'xtick.labelsize'     : 30,
+          'text.fontsize'       : 16,
+          'xtick.labelsize'     : 16,
           'xtick.major.pad'     : 10,
           'xtick.major.size'    : 10,
           'xtick.minor.size'    : 5,
           'xtick.major.width'   : 2.5,
           'xtick.minor.width'   : 1.25,
-          'ytick.labelsize'     : 30,
+          'ytick.labelsize'     : 16,
           'ytick.major.pad'     : 8,
           'ytick.major.size'    : 10,
           'ytick.minor.size'    : 5,
@@ -20,37 +20,26 @@ pars = {  'backend'             : 'pdf',
           'legend.borderpad'    : 0.25,     # empty space around the legend box
           'legend.labelspacing' : 0.5,
           'legend.borderaxespad': 0.75,
-          'legend.fontsize'     : 32,
+          'legend.fontsize'     : 16,
           'legend.fancybox'     : True,
           'legend.shadow'       : False,
           'legend.frameon'      : True,
           'lines.markersize'    : 7,
-          'lines.linewidth'     : 4,
+          'lines.linewidth'     : 3,
           'font.family'         : 'serif',
           'font.sans-serif'     : 'Helvetica',
           'font.serif'          : 'cmr10',
-          'font.size'           : 32,
+          'font.size'           : 16,
           'axes.facecolor'      : 'white',   # axes background color
           'axes.edgecolor'      : 'black',   # axes edge color
           'axes.linewidth'      : 1.0,     # edge linewidth
           'axes.labelweight'    : 'normal',  # weight of the x and y labels
           'axes.labelcolor'     : 'black',
-          'axes.labelsize'      : 36,
+          'axes.labelsize'      : 16,
           'axes.axisbelow'      : 'True',
           'axes.formatter.limits': (-4, 4), 
-          #'axes.color_cycle'    : ['#95d0fc', '#bf77f6', '#ad8150', '#840000', '#feb308', '#f7022a',
-          #                         '#3f9b0b', '#c0fb2d', '#069af3', '#ca6641', '#caa0ff', '#016795',
-          #                         '#017b92', '#d3494e', '#f075e6', '#3c9992', '#ff964f', '#6258c4',
-          #                         '#6ecb3c', '#aeff6e', '#a442a0', '#0e87cc', '#71aa34', '#fedf08']
-          #'axes.color_cycle'    : ['#bf5700', '#333f48', '#005f86', '#43695b', '#f2a900', '#382f2d',
-          #                         '#3f9b0b', '#c0fb2d', '#069af3', '#ca6641', '#caa0ff', '#016795',
-          #                         '#017b92', '#d3494e', '#f075e6', '#3c9992', '#ff964f', '#6258c4',
-          #                         '#6ecb3c', '#aeff6e', '#a442a0', '#0e87cc', '#71aa34', '#fedf08']
-          #}
-          'axes.color_cycle'    : ['#bf5700', '#333f48', '#030aa7', '#f2a900', '#43695b', '#005f86', '#382f2d',
-                                   '#3f9b0b', '#c0fb2d', '#069af3', '#ca6641', '#caa0ff', '#016795',
-                                   '#017b92', '#d3494e', '#3c9992', '#ff964f', '#6258c4',
-                                   '#6ecb3c', '#aeff6e', '#a442a0', '#0e87cc', '#71aa34', '#fedf08']
+          'axes.color_cycle'    : ['#293352', '#A51C30', '#4E84C4', '#52854C', 
+                                   '#D16103', '#C4961A', '#FFDB6D']
           }
 ################################################################################
 # COLORS
